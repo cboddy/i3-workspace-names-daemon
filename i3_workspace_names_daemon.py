@@ -22,7 +22,7 @@ DEFAULT_APP_ICON_CONFIG = {
 }
 
 
-def build_rename(i3, app_icons):
+def build_rename(i3, app_icons, delim):
     """Build rename callback function to pass to i3ipc.
 
     Parameters
@@ -47,7 +47,7 @@ def build_rename(i3, app_icons):
         for workspace in i3.get_tree().workspaces():
             names = [get_icon_or_name(leaf)
                      for leaf in workspace.leaves()]
-            names = "|".join(names)
+            names = delim.join(names)
             if int(workspace.num) > 0:
                 i3.command('rename workspace "{}" to "{}: {}"'.format(workspace.name, workspace.num, names))
             else:
@@ -111,6 +111,7 @@ def main():
     parser.add_argument("-config-path",
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
+    parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace, '|' by default", required=False, default="|", type=str)
     args = parser.parse_args()
 
     app_icons = _get_app_icons(args.config_path)
@@ -122,7 +123,7 @@ def main():
     # build i3-connection
     i3 = i3ipc.Connection()
 
-    rename = build_rename(i3, app_icons)
+    rename = build_rename(i3, app_icons, args.delimiter)
     for case in ['window::move', 'window::new', 'window::title', 'window::close']:
         i3.on(case, rename)
     i3.main()
