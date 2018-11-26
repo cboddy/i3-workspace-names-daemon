@@ -48,7 +48,10 @@ def build_rename(i3, app_icons):
             names = [get_icon_or_name(leaf)
                      for leaf in workspace.leaves()]
             names = "|".join(names)
-            i3.command('rename workspace "{}" to "{}: {}"'.format(workspace.name, workspace.num, names))
+            if int(workspace.num) > 0:
+                i3.command('rename workspace "{}" to "{}: {}"'.format(workspace.name, workspace.num, names))
+            else:
+                i3.command('rename workspace "{}" to "{}"'.format(workspace.name, names))
     return rename
 
 
