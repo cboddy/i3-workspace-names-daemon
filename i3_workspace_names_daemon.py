@@ -30,6 +30,8 @@ def build_rename(i3, app_icons, delim):
     i3: `i3ipc.i3ipc.Connection`
     app_icons: `dict[str, str]`
         Index of application-name (from i3) to icon-name (in font-awesome gallery).
+    delim: `str`
+        Delimiter to use when build workspace name from app names/icons.
 
     Returns
     -------
@@ -111,7 +113,9 @@ def main():
     parser.add_argument("-config-path",
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
-    parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace, '|' by default", required=False, default="|", type=str)
+    parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace.",
+                        required=False,
+                        default="|")
     args = parser.parse_args()
 
     app_icons = _get_app_icons(args.config_path)
