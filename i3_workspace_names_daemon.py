@@ -115,7 +115,7 @@ def main():
     # check for missing icons
     for app, icon_name in app_icons.items():
         if not icon_name in icons:
-            print("Specified icon '{}' for app '{}' does not exist!")
+            print("Specified icon '{}' for app '{}' does not exist!".format(icon_name, app))
     # build i3-connection
     i3 = i3ipc.Connection()
 
