@@ -38,7 +38,6 @@ def build_rename(i3, app_icons, delim):
         The rename callback.
     """
     def get_icon_or_name(leaf):
-        window_class = ""
         if leaf.window_class:
             window_class = leaf.window_class.lower()
         else:
