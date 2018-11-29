@@ -55,19 +55,14 @@ def build_rename(i3, app_icons, delim):
         workdicts = i3.get_workspaces()
         visible =  [workdict['name'] for workdict in workdicts if workdict['visible']]
         visworkspaces = []
-        focus = [workdict['name'] for workdict in workdicts if workdict['focused']]
+        focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
         focusname = None
-        if len(focus) > 0:
-            focus = focus[0]
-        else:
-            focus = None
 
         commands = []
         for workspace in workspaces:
             names = [get_icon_or_name(leaf)
                      for leaf in workspace.leaves()]
             names = delim.join(names)
-            newname = ""
             if int(workspace.num) > 0:
                 newname = "{}: {}".format(workspace.num, names)
             else:
