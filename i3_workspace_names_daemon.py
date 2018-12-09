@@ -3,7 +3,6 @@
 
 import json
 import os.path
-from collections import OrderedDict
 import argparse
 import i3ipc
 from fa_icons import icons
@@ -63,7 +62,8 @@ def build_rename(i3, app_icons, delim, uniq):
             names = [get_icon_or_name(leaf)
                      for leaf in workspace.leaves()]
             if uniq:
-                names = list(OrderedDict.fromkeys(names))
+                seen = set()
+                names = [x for x in names if x not in seen and not seen.add(x)]
             names = delim.join(names)
             if int(workspace.num) > 0:
                 newname = "{}: {}".format(workspace.num, names)
