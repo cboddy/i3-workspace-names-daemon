@@ -21,7 +21,7 @@ DEFAULT_APP_ICON_CONFIG = {
     "signal": "comment"
 }
 
-def build_rename(i3, app_icons, delim):
+def build_rename(i3, app_icons, delim, uniq):
     """Build rename callback function to pass to i3ipc.
 
     Parameters
@@ -61,11 +61,14 @@ def build_rename(i3, app_icons, delim):
         for workspace in workspaces:
             names = [get_icon_or_name(leaf)
                      for leaf in workspace.leaves()]
+            if uniq:
+                seen = set()
+                names = [x for x in names if x not in seen and not seen.add(x)]
             names = delim.join(names)
             if int(workspace.num) > 0:
                 newname = "{}: {}".format(workspace.num, names)
             else:
-                newname = names 
+                newname = names
 
             if workspace.name in visible:
                 visworkspaces.append(newname)
@@ -143,6 +146,10 @@ def main():
     parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace.",
                         required=False,
                         default="|")
+    parser.add_argument("-u", "--uniq", help="Remove duplicate icons in case the same application ",
+                        action="store_true",
+                        required=False,
+                        default=False)
     args = parser.parse_args()
 
     app_icons = _get_app_icons(args.config_path)
@@ -154,7 +161,7 @@ def main():
     # build i3-connection
     i3 = i3ipc.Connection()
 
-    rename = build_rename(i3, app_icons, args.delimiter)
+    rename = build_rename(i3, app_icons, args.delimiter, args.uniq)
     for case in ['window::move', 'window::new', 'window::title', 'window::close']:
         i3.on(case, rename)
     i3.main()
