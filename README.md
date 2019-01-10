@@ -86,9 +86,11 @@ chris@vulcan: ~$ cat ~/.i3/app-icons.json
 
 where the key is the name of the i3-window (ie. what is shown in the i3-bar when it is not configured yet) and  the value is the font-awesome icon name you want to show instead, see [picking icons](#picking-icons).
 
+Note: the hard-coded list above is used if you don't add this icon-config file.
+
 ### picking icons 
 
-The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package as you might expect.**
+The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
 
 ##### FAQ
 https://pypi.org/project/i3-workspace-names-daemon/
