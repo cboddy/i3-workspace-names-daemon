@@ -21,6 +21,7 @@ DEFAULT_APP_ICON_CONFIG = {
     "signal": "comment"
 }
 
+
 def build_rename(i3, app_icons, delim, uniq):
     """Build rename callback function to pass to i3ipc.
 
@@ -39,20 +40,24 @@ def build_rename(i3, app_icons, delim, uniq):
     """
     def get_icon_or_name(leaf):
         if leaf.window_class:
-            window_class = leaf.window_class.lower()
+            name = leaf.window_class
+        elif leaf.name is not None:
+            name = leaf.name
         else:
-            window_class = leaf.name.lower()
+            # no identifiable info. about this window
+            return '?'
+        name = name.lower()
 
-        if window_class in app_icons and app_icons[window_class] in icons:
-            return icons[app_icons[window_class]]
+        if name in app_icons and app_icons[name] in icons:
+            return icons[app_icons[name]]
         else:
-            return window_class.lower()
+            return name
 
     def rename(i3, e):
         workspaces = i3.get_tree().workspaces()
-        #need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
+        # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
-        visible =  [workdict['name'] for workdict in workdicts if workdict['visible']]
+        visible = [workdict['name'] for workdict in workdicts if workdict['visible']]
         visworkspaces = []
         focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
         focusname = None
@@ -80,9 +85,9 @@ def build_rename(i3, app_icons, delim, uniq):
         for workspace in visworkspaces + [focusname]:
             commands.append('workspace {}'.format(workspace))
 
-        #we have to join all the activate workspaces commands into one or the order
-        #might get scrambled by multiple i3-msg instances running asyncronously
-        #causing the wrong workspace to be activated last, which changes the focus.
+        # we have to join all the activate workspaces commands into one or the order
+        # might get scrambled by multiple i3-msg instances running asyncronously
+        # causing the wrong workspace to be activated last, which changes the focus.
         i3.command(';'.join(commands))
     return rename
 
