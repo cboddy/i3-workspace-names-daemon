@@ -39,10 +39,15 @@ def build_rename(i3, app_icons, delim, uniq):
         The rename callback.
     """
     def get_icon_or_name(leaf):
-        if leaf.window_class:
+        if leaf.window_class and leaf.window_class == 'Google-chrome':
+            name = leaf.window_instance
+            chrome = True
+        elif leaf.window_class:
             name = leaf.window_class
+            chrome = False
         elif leaf.name is not None:
             name = leaf.name
+            chrome = False
         else:
             # no identifiable info. about this window
             return '?'
@@ -50,6 +55,8 @@ def build_rename(i3, app_icons, delim, uniq):
 
         if name in app_icons and app_icons[name] in icons:
             return icons[app_icons[name]]
+        elif chrome:
+            return icons[app_icons['google-chrome']]
         else:
             return name
 
