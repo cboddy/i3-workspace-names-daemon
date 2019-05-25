@@ -5,9 +5,10 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='i3-workspace-names-daemon',
-      version='0.9.0',
+      version='0.10.0',
       description='Dynamically update the name of each i3wm workspace using font-awesome icons or the names of applications running in each workspace.',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       url='https://github.com/cboddy/i3-workspace-names-daemon',
       license='MIT',
       zip_safe=False,
