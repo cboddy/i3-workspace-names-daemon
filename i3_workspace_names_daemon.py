@@ -7,7 +7,7 @@ import argparse
 import i3ipc
 from fa_icons import icons
 
-I3_CONFIG_PATHS = (os.path.expanduser("~/.i3"), os.path.expanduser("~/.config/i3"))
+I3_CONFIG_PATHS = tuple(os.path.expanduser(path) for path in ("~/.i3", "~/.config/i3", "~/.config/i3-regolith"))
 
 DEFAULT_APP_ICON_CONFIG = {
     "chromium-browser": "chrome",
