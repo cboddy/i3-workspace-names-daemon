@@ -5,7 +5,7 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='i3-workspace-names-daemon',
-      version='0.11.0',
+      version='0.12.0',
       description='Dynamically update the name of each i3wm workspace using font-awesome icons or the names of applications running in each workspace.',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -13,7 +13,7 @@ setup(name='i3-workspace-names-daemon',
       license='MIT',
       zip_safe=False,
       py_modules=['i3_workspace_names_daemon', 'fa_icons'],
-      install_requires=["i3ipc"],
+      install_requires=["i3ipc==1.7.1"],
       author='Chris Boddy',
       author_email='chris@boddy.im',
       entry_points={
