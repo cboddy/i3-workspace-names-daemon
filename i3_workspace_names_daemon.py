@@ -46,7 +46,7 @@ def build_rename(i3, app_icons, delim, uniq):
         else:
             # no identifiable info. about this window
             return '?'
-        name = name.lower()
+        name = name[0:12].lower()
 
         if name in app_icons and app_icons[name] in icons:
             return icons[app_icons[name]]
