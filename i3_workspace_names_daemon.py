@@ -22,7 +22,7 @@ DEFAULT_APP_ICON_CONFIG = {
 }
 
 
-def build_rename(i3, app_icons, delim, uniq):
+def build_rename(i3, app_icons, delim, lenght, uniq):
     """Build rename callback function to pass to i3ipc.
 
     Parameters
@@ -38,7 +38,7 @@ def build_rename(i3, app_icons, delim, uniq):
     func
         The rename callback.
     """
-    def get_icon_or_name(leaf):
+    def get_icon_or_name(leaf, lenght):
         if leaf.window_class:
             name = leaf.window_class
         elif leaf.name is not None:
@@ -46,7 +46,7 @@ def build_rename(i3, app_icons, delim, uniq):
         else:
             # no identifiable info. about this window
             return '?'
-        name = name.lower()
+        name = name[0:lenght].lower()
 
         if name in app_icons and app_icons[name] in icons:
             return icons[app_icons[name]]
@@ -64,7 +64,7 @@ def build_rename(i3, app_icons, delim, uniq):
 
         commands = []
         for workspace in workspaces:
-            names = [get_icon_or_name(leaf)
+            names = [get_icon_or_name(leaf,lenght)
                      for leaf in workspace.leaves()]
             if uniq:
                 seen = set()
@@ -151,11 +151,15 @@ def main():
     parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace.",
                         required=False,
                         default="|")
+    parser.add_argument("-l", "--max_title_lenght", help="Truncate title to specified lenght.",
+                        required=False,
+                        default=12)
     parser.add_argument("-u", "--uniq", help="Remove duplicate icons in case the same application ",
                         action="store_true",
                         required=False,
                         default=False)
     args = parser.parse_args()
+    max_title_lenght = int(args.max_title_lenght)
 
     app_icons = _get_app_icons(args.config_path)
 
@@ -166,7 +170,8 @@ def main():
     # build i3-connection
     i3 = i3ipc.Connection()
 
-    rename = build_rename(i3, app_icons, args.delimiter, args.uniq)
+    rename = build_rename(i3, app_icons, args.delimiter,
+            max_title_lenght, args.uniq)
     for case in ['window::move', 'window::new', 'window::title', 'window::close']:
         i3.on(case, rename)
     i3.main()
