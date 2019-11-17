@@ -46,12 +46,12 @@ def build_rename(i3, app_icons, delim, length, uniq):
         else:
             # no identifiable info. about this window
             return '?'
-        name = name[0:length].lower()
+        name = name.lower()
 
         if name in app_icons and app_icons[name] in icons:
             return icons[app_icons[name]]
         else:
-            return name
+            return name[:length]
 
     def rename(i3, e):
         workspaces = i3.get_tree().workspaces()
@@ -153,13 +153,14 @@ def main():
                         default="|")
     parser.add_argument("-l", "--max_title_length", help="Truncate title to specified length.",
                         required=False,
-                        default=12)
+                        default=12,
+                        type=int)
     parser.add_argument("-u", "--uniq", help="Remove duplicate icons in case the same application ",
                         action="store_true",
                         required=False,
                         default=False)
     args = parser.parse_args()
-    max_title_length = int(args.max_title_length)
+    max_title_length = args.max_title_length
 
     app_icons = _get_app_icons(args.config_path)
 
