@@ -82,8 +82,6 @@ def build_rename(i3, app_icons, delim, length, uniq):
 
             commands.append('rename workspace "{}" to "{}"'.format(workspace.name, newname))
 
-        for workspace in visworkspaces + [focusname]:
-            commands.append('workspace {}'.format(workspace))
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
