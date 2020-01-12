@@ -30,7 +30,7 @@ def build_rename(i3, app_icons, delim, length, uniq):
     ----------
     i3: `i3ipc.i3ipc.Connection`
     app_icons: `dict[str, str]`
-        Index of application-name (from i3) to icon-name (in font-awesome gallery).
+        Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
     delim: `str`
         Delimiter to use when build workspace name from app names/icons.
 
@@ -47,12 +47,10 @@ def build_rename(i3, app_icons, delim, length, uniq):
         else:
             # no identifiable info. about this window
             return '?'
-        name = name.lower()
-
-        if name in app_icons and app_icons[name] in icons:
-            return icons[app_icons[name]]
-        else:
-            return name[:length]
+        for name_re in app_icons.keys():
+            if re.match(name_re, name, re.IGNORECASE) and app_icons[name_re] in icons:
+                return icons[app_icons[name_re]]
+        return name[:length]
 
     def rename(i3, e):
         workspaces = i3.get_tree().workspaces()
