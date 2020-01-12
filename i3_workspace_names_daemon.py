@@ -4,6 +4,7 @@
 import json
 import os.path
 import argparse
+import re
 import i3ipc
 from fa_icons import icons
 
@@ -57,9 +58,9 @@ def build_rename(i3, app_icons, delim, length, uniq):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
-        visible = [workdict['name'] for workdict in workdicts if workdict['visible']]
+        visible = [workdict.name for workdict in workdicts if workdict.visible]
         visworkspaces = []
-        focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
+        focus = ([workdict.name for workdict in workdicts if workdict.focused] or [None])[0]
         focusname = None
 
         commands = []
@@ -82,11 +83,11 @@ def build_rename(i3, app_icons, delim, length, uniq):
 
             commands.append('rename workspace "{}" to "{}"'.format(workspace.name, newname))
 
-
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
         # causing the wrong workspace to be activated last, which changes the focus.
         i3.command(';'.join(commands))
+
     return rename
 
 
@@ -146,7 +147,8 @@ def main():
     parser.add_argument("-config-path",
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
-    parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace.",
+    parser.add_argument("-d", "--delimiter",
+                        help="The delimiter used to separate multiple window names in the same workspace.",
                         required=False,
                         default="|")
     parser.add_argument("-l", "--max_title_length", help="Truncate title to specified length.",
