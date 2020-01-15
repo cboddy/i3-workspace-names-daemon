@@ -57,9 +57,9 @@ def build_rename(i3, app_icons, delim, length, uniq):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
-        visible = [workdict['name'] for workdict in workdicts if workdict['visible']]
+        visible = [getattr(workdict, "name") for workdict in workdicts if getattr(workdict, "visible")]
         visworkspaces = []
-        focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
+        focus = ([getattr(workdict, "name") for workdict in workdicts if getattr(workdict, "focused")] or [None])[0]
         focusname = None
 
         commands = []
@@ -71,7 +71,7 @@ def build_rename(i3, app_icons, delim, length, uniq):
                 names = [x for x in names if x not in seen and not seen.add(x)]
             names = delim.join(names)
             if int(workspace.num) > 0:
-                newname = "{}: {}".format(workspace.num, names)
+                newname = u"{}: {}".format(workspace.num, names)
             else:
                 newname = names
 
@@ -80,13 +80,13 @@ def build_rename(i3, app_icons, delim, length, uniq):
             if workspace.name == focus:
                 focusname = newname
 
-            commands.append('rename workspace "{}" to "{}"'.format(workspace.name, newname))
+            commands.append(u'rename workspace "{}" to "{}"'.format(workspace.name, newname))
 
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
         # causing the wrong workspace to be activated last, which changes the focus.
-        i3.command(';'.join(commands))
+        i3.command(u';'.join(commands))
     return rename
 
 
