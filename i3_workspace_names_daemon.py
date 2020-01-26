@@ -40,7 +40,10 @@ def build_rename(i3, app_icons, delim, length, uniq):
     """
     def get_icon_or_name(leaf, length):
         if leaf.window_class:
-            name = leaf.window_class
+            if "chrom" in leaf.window_class.lower():
+                name = leaf.window_instance
+            else:
+                name = leaf.window_class 
         elif leaf.name is not None:
             name = leaf.name
         else:
