@@ -96,6 +96,14 @@ To match windows with a specific class by their instance instead, specify the cl
 
 This can be useful for browser-based web apps which may all have the same class (for example `google-chrome`) but unique instance values.
 
+### unrecognised windows
+
+If a window is not in the icon config then by default the window title will be displayed instead.
+
+The maximum length of the displayed window title can be set with the command line argument `--max_title_length` or `-l`.
+
+To instead show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
+
 ### picking icons 
 
 The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**

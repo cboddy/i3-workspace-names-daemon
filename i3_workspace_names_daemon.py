@@ -53,6 +53,8 @@ def build_rename(i3, app_icons, delim, length, uniq, match_instances):
 
         if name in app_icons and app_icons[name] in icons:
             return icons[app_icons[name]]
+        elif "_no_match" in app_icons and app_icons["_no_match"] in icons:
+            return icons[app_icons["_no_match"]]
         else:
             return name[:length]
 
