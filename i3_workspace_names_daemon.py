@@ -22,7 +22,7 @@ DEFAULT_APP_ICON_CONFIG = {
 }
 
 
-def build_rename(i3, app_icons, delim, length, uniq):
+def build_rename(i3, app_icons, delim, length, uniq, match_instances):
     """Build rename callback function to pass to i3ipc.
 
     Parameters
@@ -40,7 +40,10 @@ def build_rename(i3, app_icons, delim, length, uniq):
     """
     def get_icon_or_name(leaf, length):
         if leaf.window_class:
-            name = leaf.window_class
+            if leaf.window_class.lower() in match_instances:
+                name = leaf.window_instance
+            else:
+                name = leaf.window_class
         elif leaf.name is not None:
             name = leaf.name
         else:
@@ -157,6 +160,11 @@ def main():
                         action="store_true",
                         required=False,
                         default=False)
+    parser.add_argument("-i", "--instance", help="If window class contains given string, matches by window instance instead",
+                        required=False,
+                        default=[],
+                        type=str.lower,
+                        action="append")
     args = parser.parse_args()
     max_title_length = args.max_title_length
 
@@ -170,7 +178,7 @@ def main():
     i3 = i3ipc.Connection()
 
     rename = build_rename(i3, app_icons, args.delimiter,
-                          max_title_length, args.uniq)
+                          max_title_length, args.uniq, args.instance)
     for case in ['window::move', 'window::new', 'window::title', 'window::close']:
         i3.on(case, rename)
     i3.main()
