@@ -80,7 +80,9 @@ def build_rename(i3, app_icons, delim, length, uniq):
             if workspace.name == focus:
                 focusname = newname
 
-            commands.append('rename workspace "{}" to "{}"'.format(workspace.name, newname))
+            commands.append('rename workspace "{}" to "{}"'.format(
+                # escape any double quotes in old or new name.
+                workspace.name.replace('"','\\"'), newname.replace('"','\\"')))
 
 
         # we have to join all the activate workspaces commands into one or the order
