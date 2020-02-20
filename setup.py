@@ -13,7 +13,7 @@ setup(name='i3-workspace-names-daemon',
       license='MIT',
       zip_safe=False,
       py_modules=['i3_workspace_names_daemon', 'fa_icons'],
-      install_requires=["i3ipc==1.7.1"],
+      install_requires=["i3ipc"],
       author='Chris Boddy',
       author_email='chris@boddy.im',
       entry_points={

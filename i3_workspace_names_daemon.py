@@ -57,9 +57,9 @@ def build_rename(i3, app_icons, delim, length, uniq):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
-        visible = [workdict['name'] for workdict in workdicts if workdict['visible']]
+        visible = [workdict.name for workdict in workdicts if workdict.visible]
         visworkspaces = []
-        focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
+        focus = ([workdict.name for workdict in workdicts if workdict.focused] or [None])[0]
         focusname = None
 
         commands = []
