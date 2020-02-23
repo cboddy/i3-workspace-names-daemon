@@ -87,7 +87,9 @@ def build_rename(i3, app_icons, delim, length, uniq, match_instances):
                 focusname = newname
 
             if workspace.name != newname:
-                commands.append('rename workspace "{}" to "{}"'.format(workspace.name, newname))
+                commands.append('rename workspace "{}" to "{}"'.format(
+                    # escape any double quotes in old or new name.
+                    workspace.name.replace('"','\\"'), newname.replace('"','\\"')))
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
