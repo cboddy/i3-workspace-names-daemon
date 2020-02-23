@@ -43,6 +43,7 @@ def build_rename(i3, app_icons, args):
     length = args.max_title_length
     uniq = args.uniq
     no_match_show_name = not args.no_match_not_show_name
+    verbose = args.verbose
     
     def get_icon_or_name(leaf, length):
         for name in (leaf.name, leaf.window_title, leaf.window_instance, leaf.window_class):
@@ -88,6 +89,8 @@ def build_rename(i3, app_icons, args):
                 commands.append('rename workspace "{}" to "{}"'.format(
                     # escape any double quotes in old or new name.
                     workspace.name.replace('"','\\"'), newname.replace('"','\\"')))
+                if verbose:
+                    print(commands[-1])
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
@@ -147,6 +150,17 @@ def _get_app_icons(config_path=None):
         return dict(DEFAULT_APP_ICON_CONFIG)
 
 
+def _verbose_startup(i3):
+    for w in i3.get_tree().workspaces():
+        print('WORKSPACE: "{}"'.format(w.name))
+        for i, l in enumerate(w.leaves()):
+            print('''===> leave: {}
+-> name: {}
+-> window_title: {}
+-> window_instance: {}
+-> window_class: {}'''.format(i, l.name, l.window_title, l.window_instance, l.window_class))
+
+
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("-config-path",
@@ -167,6 +181,10 @@ def main():
     parser.add_argument('-n', "--no-match-not-show-name",
                         help="when you set '_no_match' in your app icons, if you don't want the application name set this option",
                         action="store_true", required=False, default=False)
+    parser.add_argument("-v", "--verbose", help="verbose startup that will help you to find the right name of the window",
+                        action="store_true",
+                        required=False,
+                        default=False)    
     args = parser.parse_args()
 
     app_icons = _get_app_icons(args.config_path)
@@ -175,8 +193,11 @@ def main():
     for app, icon_name in app_icons.items():
         if not icon_name in icons:
             print("Specified icon '{}' for app '{}' does not exist!".format(icon_name, app))
+
     # build i3-connection
     i3 = i3ipc.Connection()
+    if args.verbose:
+        _verbose_startup(i3)
 
     rename = build_rename(i3, app_icons, args)
     for case in ['window::move', 'window::new', 'window::title', 'window::close']:

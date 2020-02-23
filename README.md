@@ -100,6 +100,8 @@ Windows names are detected by instecting in the following priority
 - class
 If there is no window name available a question mark is shown instead.
 
+Another (simpler) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
+
 ### unrecognised windows
 
 If a window is not in the icon config then by default the window title will be displayed instead.
