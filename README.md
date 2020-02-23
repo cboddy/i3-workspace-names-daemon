@@ -88,6 +88,22 @@ where the key is the name of the i3-window (ie. what is shown in the i3-bar when
 
 Note: the hard-coded list above is used if you don't add this icon-config file.
 
+### matching windows
+
+By default windows are matched by the window class if it is available, otherwise by the window name. If there is no window name available a question mark is shown instead.
+
+To match windows with a specific class by their instance instead, specify the class with the `--instance` or `-i` argument. This can be used multiple times to specify that multiple windows should be matched by their instance.
+
+This can be useful for browser-based web apps which may all have the same class (for example `google-chrome`) but unique instance values.
+
+### unrecognised windows
+
+If a window is not in the icon config then by default the window title will be displayed instead.
+
+The maximum length of the displayed window title can be set with the command line argument `--max_title_length` or `-l`.
+
+To instead show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
+
 ### picking icons 
 
 The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
