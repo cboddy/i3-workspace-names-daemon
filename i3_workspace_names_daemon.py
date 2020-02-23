@@ -4,6 +4,7 @@
 import json
 import os.path
 import argparse
+import re
 import i3ipc
 from fa_icons import icons
 
@@ -29,7 +30,7 @@ def build_rename(i3, app_icons, delim, length, uniq):
     ----------
     i3: `i3ipc.i3ipc.Connection`
     app_icons: `dict[str, str]`
-        Index of application-name (from i3) to icon-name (in font-awesome gallery).
+        Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
     delim: `str`
         Delimiter to use when build workspace name from app names/icons.
 
@@ -46,20 +47,18 @@ def build_rename(i3, app_icons, delim, length, uniq):
         else:
             # no identifiable info. about this window
             return '?'
-        name = name.lower()
-
-        if name in app_icons and app_icons[name] in icons:
-            return icons[app_icons[name]]
-        else:
-            return name[:length]
+        for name_re in app_icons.keys():
+            if re.match(name_re, name, re.IGNORECASE) and app_icons[name_re] in icons:
+                return icons[app_icons[name_re]]
+        return name[:length]
 
     def rename(i3, e):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
-        visible = [workdict['name'] for workdict in workdicts if workdict['visible']]
+        visible = [workdict.name for workdict in workdicts if workdict.visible]
         visworkspaces = []
-        focus = ([workdict['name'] for workdict in workdicts if workdict['focused']] or [None])[0]
+        focus = ([workdict.name for workdict in workdicts if workdict.focused] or [None])[0]
         focusname = None
 
         commands = []
@@ -87,6 +86,7 @@ def build_rename(i3, app_icons, delim, length, uniq):
         # might get scrambled by multiple i3-msg instances running asyncronously
         # causing the wrong workspace to be activated last, which changes the focus.
         i3.command(';'.join(commands))
+
     return rename
 
 
@@ -146,7 +146,8 @@ def main():
     parser.add_argument("-config-path",
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
-    parser.add_argument("-d", "--delimiter", help="The delimiter used to separate multiple window names in the same workspace.",
+    parser.add_argument("-d", "--delimiter",
+                        help="The delimiter used to separate multiple window names in the same workspace.",
                         required=False,
                         default="|")
     parser.add_argument("-l", "--max_title_length", help="Truncate title to specified length.",
