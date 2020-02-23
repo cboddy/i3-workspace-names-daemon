@@ -75,7 +75,7 @@ def build_rename(i3, app_icons, args):
                 seen = set()
                 names = [x for x in names if x not in seen and not seen.add(x)]
             names = delim.join(names)
-            if int(workspace.num) > 0:
+            if int(workspace.num) >= 0:
                 newname = u"{}: {}".format(workspace.num, names)
             else:
                 newname = names
