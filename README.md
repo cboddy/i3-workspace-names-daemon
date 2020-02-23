@@ -120,5 +120,3 @@ The easiest way to pick an icon is to search for one in the [gallery](https://or
 
 The window delimiter can be specified with `-d` or `--delimiter` parameter by default it is `|`.
 
-##### FAQ
-https://pypi.org/project/i3-workspace-names-daemon/
