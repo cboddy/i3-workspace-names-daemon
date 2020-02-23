@@ -80,7 +80,8 @@ chris@vulcan: ~$ cat ~/.i3/app-icons.json
     "nautilus": "folder-open",
     "clementine": "music",
     "vlc": "play",
-    "signal": "comment"
+    "signal": "comment",
+    "_no_match": "question",
 }
 ```
 
@@ -90,11 +91,14 @@ Note: the hard-coded list above is used if you don't add this icon-config file.
 
 ### matching windows
 
-By default windows are matched by the window class if it is available, otherwise by the window name. If there is no window name available a question mark is shown instead.
+You can debug windows names with `xprop`
 
-To match windows with a specific class by their instance instead, specify the class with the `--instance` or `-i` argument. This can be used multiple times to specify that multiple windows should be matched by their instance.
-
-This can be useful for browser-based web apps which may all have the same class (for example `google-chrome`) but unique instance values.
+Windows names are detected by instecting in the following priority
+- name
+- title
+- instance
+- class
+If there is no window name available a question mark is shown instead.
 
 ### unrecognised windows
 
@@ -102,7 +106,8 @@ If a window is not in the icon config then by default the window title will be d
 
 The maximum length of the displayed window title can be set with the command line argument `--max_title_length` or `-l`.
 
-To instead show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
+To show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
+If you want to show only that icon (hiding the name) then use the `--no-match-not-show-name` or `-n` option.
 
 ### picking icons 
 
