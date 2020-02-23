@@ -93,11 +93,12 @@ Note: the hard-coded list above is used if you don't add this icon-config file.
 
 You can debug windows names with `xprop`
 
-Windows names are detected by instecting in the following priority
+Windows names are detected by inspecting in the following priority
 - name
 - title
 - instance
 - class
+
 If there is no window name available a question mark is shown instead.
 
 Another (simpler) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
