@@ -113,5 +113,9 @@ If you want to show only that icon (hiding the name) then use the `--no-match-no
 
 The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
 
+### windows delimiter
+
+The window delimiter can be specified with `-d` or `--delimiter` parameter by default it is `|`.
+
 ##### FAQ
 https://pypi.org/project/i3-workspace-names-daemon/
