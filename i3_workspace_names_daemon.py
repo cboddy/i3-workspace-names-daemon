@@ -44,9 +44,12 @@ def build_rename(i3, app_icons, args):
     uniq = args.uniq
     no_match_show_name = not args.no_match_not_show_name
     verbose = args.verbose
-    
+
     def get_icon_or_name(leaf, length):
-        for name in (leaf.name, leaf.window_title, leaf.window_instance, leaf.window_class):
+        for identifier in ('name', 'window_title', 'window_instance', 'window_class'):
+            name = getattr(leaf, identifier, None)
+            if name is None:
+                continue
             for name_re in app_icons.keys():
                 if re.match(name_re, name, re.IGNORECASE) \
                    and app_icons[name_re] in icons:
@@ -56,6 +59,7 @@ def build_rename(i3, app_icons, args):
                 return icons[app_icons["_no_match"]] + ('{}'.format(name) if no_match_show_name else '')
             return name[:length]
         else:
+            # no identifiable information about this window
             return '?'
 
     def rename(i3, e):
@@ -88,7 +92,7 @@ def build_rename(i3, app_icons, args):
             if workspace.name != newname:
                 commands.append('rename workspace "{}" to "{}"'.format(
                     # escape any double quotes in old or new name.
-                    workspace.name.replace('"','\\"'), newname.replace('"','\\"')))
+                    workspace.name.replace('"', '\\"'), newname.replace('"', '\\"')))
                 if verbose:
                     print(commands[-1])
 
@@ -184,7 +188,7 @@ def main():
     parser.add_argument("-v", "--verbose", help="verbose startup that will help you to find the right name of the window",
                         action="store_true",
                         required=False,
-                        default=False)    
+                        default=False)
     args = parser.parse_args()
 
     app_icons = _get_app_icons(args.config_path)
