@@ -80,7 +80,8 @@ chris@vulcan: ~$ cat ~/.i3/app-icons.json
     "nautilus": "folder-open",
     "clementine": "music",
     "vlc": "play",
-    "signal": "comment"
+    "signal": "comment",
+    "_no_match": "question",
 }
 ```
 
@@ -88,9 +89,34 @@ where the key is the name of the i3-window (ie. what is shown in the i3-bar when
 
 Note: the hard-coded list above is used if you don't add this icon-config file.
 
+### matching windows
+
+You can debug windows names with `xprop`
+
+Windows names are detected by inspecting in the following priority
+- name
+- title
+- instance
+- class
+
+If there is no window name available a question mark is shown instead.
+
+Another (simpler) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
+
+### unrecognised windows
+
+If a window is not in the icon config then by default the window title will be displayed instead.
+
+The maximum length of the displayed window title can be set with the command line argument `--max_title_length` or `-l`.
+
+To show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
+If you want to show only that icon (hiding the name) then use the `--no-match-not-show-name` or `-n` option.
+
 ### picking icons 
 
 The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
 
-##### FAQ
-https://pypi.org/project/i3-workspace-names-daemon/
+### windows delimiter
+
+The window delimiter can be specified with `-d` or `--delimiter` parameter by default it is `|`.
+
