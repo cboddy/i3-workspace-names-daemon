@@ -76,7 +76,7 @@ def build_rename(i3, mappings, args):
 
     def transform_title(target_mapping, window_title):
         tt = target_mapping["transform_title"]
-        transform_from = ".*" + tt["from"] + ".*"
+        transform_from = "^" + tt["from"] + "$"
         transform_to = tt["to"]
         result, nr_subs = re.subn(transform_from, transform_to, window_title)
 

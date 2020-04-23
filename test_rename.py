@@ -297,7 +297,9 @@ class TestRename(unittest.TestCase):
 
     def test_transform_title(self):
         mappings = base_mappings()
-        mappings["emacs"] = {"transform_title": {"from": r"\[(.+?)\]", "to": r"\1",}}
+        mappings["emacs"] = {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1",}
+        }
 
         args = AttrDict(base_config())
 
@@ -310,10 +312,10 @@ class TestRename(unittest.TestCase):
         actual = get_names(mi3.cmd)
         self.assertListEqual(expected, actual)
 
-    def test_transform_title(self):
+    def test_transform_title_icon(self):
         mappings = base_mappings()
         mappings["emacs"] = {
-            "transform_title": {"from": r"\[(.+?)\]", "to": r"\1",},
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1",},
             "icon": "play",
         }
 
@@ -325,6 +327,62 @@ class TestRename(unittest.TestCase):
         rename(mi3, None)
 
         expected = ["1: \uf04bbar"]
+        actual = get_names(mi3.cmd)
+        self.assertListEqual(expected, actual)
+
+    def test_transform_title_replace_all(self):
+        mappings = base_mappings()
+        mappings["emacs"] = {
+            "transform_title": {"from": r"(.*)", "to": r"replaced",},
+        }
+
+        args = AttrDict(base_config())
+
+        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
+
+        rename = build_rename(mi3, mappings, args)
+        rename(mi3, None)
+
+        expected = ["1: replaced"]
+        actual = get_names(mi3.cmd)
+        self.assertListEqual(expected, actual)
+
+    def test_transform_title_replace_all_with_icon(self):
+        mappings = base_mappings()
+        mappings["emacs"] = {
+            "transform_title": {"from": r"(.*)", "to": r"replaced",},
+            "icon": "play",
+        }
+
+        args = AttrDict(base_config())
+
+        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
+
+        rename = build_rename(mi3, mappings, args)
+        rename(mi3, None)
+
+        expected = ["1: \uf04breplaced"]
+        actual = get_names(mi3.cmd)
+        self.assertListEqual(expected, actual)
+
+    def test_transform_title_compress(self):
+        mappings = base_mappings()
+        mappings["emacs"] = {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1", "compress": True}
+        }
+
+        args = AttrDict(base_config())
+
+        mi3 = MockI3(
+            MockWorkspace(
+                1, MockLeaf("emacs", "project [a very-too_long+window title]")
+            )
+        )
+
+        rename = build_rename(mi3, mappings, args)
+        rename(mi3, None)
+
+        expected = ["1: a ver-too_lo…"]
         actual = get_names(mi3.cmd)
         self.assertListEqual(expected, actual)
 
