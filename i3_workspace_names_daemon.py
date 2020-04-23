@@ -25,6 +25,20 @@ DEFAULT_APP_ICON_CONFIG = {
     "signal": "comment",
 }
 
+def truncate(text, length, ellipsis='…'):
+    if len(text) <= length:
+        return text
+    return text[:length] + ellipsis
+
+def compress(text, length=3):
+    ret = ''
+    matches = re.finditer(r'[a-zA-Z0-9]+', text)
+    for match in matches:
+        ret += match[0][:length]
+        if match.end() < (len(text) - 1):
+            ret += text[match.end()]
+
+    return ret
 
 def build_rename(i3, mappings, args):
     """Build rename callback function to pass to i3ipc.
@@ -45,7 +59,8 @@ def build_rename(i3, mappings, args):
     delim = args.delimiter
     length = args.max_title_length
     uniq = args.uniq
-    no_match_show_name = not args.no_match_not_show_name
+    ignore_unknown = args.ignore_unknown
+    no_unknown_name = args.no_unknown_name
     verbose = args.verbose
 
     def get_icon(icon_name):
@@ -61,6 +76,12 @@ def build_rename(i3, mappings, args):
         transform_from = ".*" + tt["from"] + ".*"
         transform_to = tt["to"]
         result, nr_subs = re.subn(transform_from, transform_to, window_title)
+
+        # shorten name
+        if tt.get('compress', False):
+            result = compress(result)
+        result = truncate(result, length)
+            
 
         # try to get the icon, otherwise leave blank string
         icon = ""
@@ -112,14 +133,17 @@ def build_rename(i3, mappings, args):
                 return mapping
 
         # no mapping was found
+        if ignore_unknown:
+            return None
+        
         window_class = name
         if window_class:
             # window class exists, no match was found
             if "_no_match" in mappings and mappings["_no_match"] in icons:
                 return icons[mappings["_no_match"]] + (
-                    "{}".format(name) if no_match_show_name else ""
+                    "" if no_unknown_name else name
                 )
-            return name[:length]
+            return truncate(name, length)
         else:
             # no identifiable information about this window
             return "?"
@@ -141,6 +165,8 @@ def build_rename(i3, mappings, args):
             if uniq:
                 seen = set()
                 names = [x for x in names if x not in seen and not seen.add(x)]
+            # filter empty names
+            names = [x for x in names if x]
             names = delim.join(names)
             if int(workspace.num) >= 0:
                 newname = u"{}: {}".format(workspace.num, names)
@@ -327,7 +353,7 @@ def main():
     )
     parser.add_argument(
         "-l",
-        "--max_title_length",
+        "--max-title-length",
         help="Truncate title to specified length.",
         required=False,
         default=12,
@@ -336,15 +362,23 @@ def main():
     parser.add_argument(
         "-u",
         "--uniq",
-        help="Remove duplicate icons in case the same application ",
+        help="Remove duplicate icons.",
+        action="store_true",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "-i",
+        "--ignore-unknown",
+        help="Ignore apps without a icon definitions.",
         action="store_true",
         required=False,
         default=False,
     )
     parser.add_argument(
         "-n",
-        "--no-match-not-show-name",
-        help="when you set '_no_match' in your app icons, if you don't want the application name set this option",
+        "--no-unknown-name",
+        help="Don't display the name of unknown apps besides the fallback icon '_no_match'.",
         action="store_true",
         required=False,
         default=False,
@@ -352,7 +386,7 @@ def main():
     parser.add_argument(
         "-v",
         "--verbose",
-        help="verbose startup that will help you to find the right name of the window",
+        help="Verbose startup that will help you to find the right match name for applications.",
         action="store_true",
         required=False,
         default=False,
