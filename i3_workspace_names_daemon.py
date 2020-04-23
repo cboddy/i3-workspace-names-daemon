@@ -25,20 +25,23 @@ DEFAULT_APP_ICON_CONFIG = {
     "signal": "comment",
 }
 
-def truncate(text, length, ellipsis='…'):
+
+def truncate(text, length, ellipsis="…"):
     if len(text) <= length:
         return text
     return text[:length] + ellipsis
 
+
 def compress(text, length=3):
-    ret = ''
-    matches = re.finditer(r'[a-zA-Z0-9]+', text)
+    ret = ""
+    matches = re.finditer(r"[a-zA-Z0-9]+", text)
     for match in matches:
         ret += match[0][:length]
         if match.end() < (len(text) - 1):
             ret += text[match.end()]
 
     return ret
+
 
 def build_rename(i3, mappings, args):
     """Build rename callback function to pass to i3ipc.
@@ -65,7 +68,7 @@ def build_rename(i3, mappings, args):
 
     def get_icon(icon_name):
         # is pango markup?
-        if icon_name.startswith('<'):
+        if icon_name.startswith("<"):
             return icon_name
         if icon_name in icons:
             return icons[icon_name]
@@ -78,10 +81,9 @@ def build_rename(i3, mappings, args):
         result, nr_subs = re.subn(transform_from, transform_to, window_title)
 
         # shorten name
-        if tt.get('compress', False):
+        if tt.get("compress", False):
             result = compress(result)
         result = truncate(result, length)
-            
 
         # try to get the icon, otherwise leave blank string
         icon = ""
@@ -122,7 +124,7 @@ def build_rename(i3, mappings, args):
                 # other undefined mapping type
                 return None
 
-    def get_icon_or_name(leaf, length):
+    def get_app_label(leaf, length):
         # interate through all identifiers, stop when first match is found
         for identifier in ("name", "window_title", "window_instance", "window_class"):
             name = getattr(leaf, identifier, None)
@@ -135,17 +137,20 @@ def build_rename(i3, mappings, args):
         # no mapping was found
         if ignore_unknown:
             return None
-        
+
         window_class = name
+        no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in icons
         if window_class:
             # window class exists, no match was found
-            if "_no_match" in mappings and mappings["_no_match"] in icons:
+            if no_match_fallback:
                 return icons[mappings["_no_match"]] + (
-                    "" if no_unknown_name else name
+                    "" if no_unknown_name else truncate(name, length)
                 )
             return truncate(name, length)
         else:
             # no identifiable information about this window
+            if no_match_fallback:
+                return icons[mappings["_no_match"]]
             return "?"
 
     def rename(i3, e):
@@ -161,7 +166,7 @@ def build_rename(i3, mappings, args):
 
         commands = []
         for workspace in workspaces:
-            names = [get_icon_or_name(leaf, length) for leaf in workspace.leaves()]
+            names = [get_app_label(leaf, length) for leaf in workspace.leaves()]
             if uniq:
                 seen = set()
                 names = [x for x in names if x not in seen and not seen.add(x)]
@@ -291,7 +296,7 @@ def _validate_dict_mapping(app, mapping):
             if not _is_valid_re(tt["from"]):
                 err = True
                 print(
-                    "Title transform mapping for app '{}' contains inalid regular expression in 'from' attribute!".format(
+                    "Title transform mapping for app '{}' contains invalid regular expression in 'from' attribute!".format(
                         app
                     )
                 )
@@ -326,7 +331,11 @@ def _validate_config(config):
                 err = True
 
         # make exceptions for custom-defined pango fonts
-        if icon_name is not None and not icon_name.startswith('<') and not icon_name in icons:
+        if (
+            icon_name is not None
+            and not icon_name.startswith("<")
+            and not icon_name in icons
+        ):
             err = True
             print(
                 "Specified icon '{}' for app '{}' does not exist!".format(
