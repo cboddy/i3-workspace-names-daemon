@@ -8,7 +8,10 @@ import re
 import i3ipc
 from fa_icons import icons
 
-I3_CONFIG_PATHS = tuple(os.path.expanduser(path) for path in ("~/.i3", "~/.config/i3", "~/.config/i3-regolith"))
+I3_CONFIG_PATHS = tuple(
+    os.path.expanduser(path)
+    for path in ("~/.i3", "~/.config/i3", "~/.config/i3-regolith")
+)
 
 DEFAULT_APP_ICON_CONFIG = {
     "chromium-browser": "chrome",
@@ -19,17 +22,17 @@ DEFAULT_APP_ICON_CONFIG = {
     "nautilus": "folder-open",
     "clementine": "music",
     "vlc": "play",
-    "signal": "comment"
+    "signal": "comment",
 }
 
 
-def build_rename(i3, app_icons, args):
+def build_rename(i3, mappings, args):
     """Build rename callback function to pass to i3ipc.
 
     Parameters
     ----------
     i3: `i3ipc.i3ipc.Connection`
-    app_icons: `dict[str, str]`
+    mappings: `dict[str, Union[dict, str]]`
         Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
     delim: `str`
         Delimiter to use when build workspace name from app names/icons.
@@ -45,22 +48,81 @@ def build_rename(i3, app_icons, args):
     no_match_show_name = not args.no_match_not_show_name
     verbose = args.verbose
 
+    def get_icon(icon_name):
+        # is pango markup?
+        if icon_name.startswith('<'):
+            return icon_name
+        if icon_name in icons:
+            return icons[icon_name]
+        return None
+
+    def transform_title(target_mapping, window_title):
+        tt = target_mapping["transform_title"]
+        transform_from = ".*" + tt["from"] + ".*"
+        transform_to = tt["to"]
+        result, nr_subs = re.subn(transform_from, transform_to, window_title)
+
+        # try to get the icon, otherwise leave blank string
+        icon = ""
+        if target_mapping.get("icon", None):
+            i = get_icon(target_mapping["icon"])
+            if i:
+                icon = i
+
+        # did the title regex match?
+        if nr_subs > 0:
+            return "{}{}".format(icon, result)
+
+        # fallback: title did not match, but icon defined
+        if icon:
+            return icon
+
+        # nothing matched
+        return None
+
+    def resolve_icon_or_mapping(name, leaf):
+        for name_re in mappings.keys():
+            if re.match(name_re, name, re.IGNORECASE):
+                # the key of the json configuration matches, we can
+                # apply the mapping now
+                target_mapping = mappings[name_re]
+
+                # is mapped to simple icon?
+                if type(target_mapping) == str:
+                    return get_icon(target_mapping)
+
+                # is mapped to a title transformation?
+                if type(target_mapping) == dict and target_mapping.get(
+                    "transform_title", None
+                ):
+                    window_title = getattr(leaf, "window_title", "")
+                    return transform_title(target_mapping, window_title)
+
+                # other undefined mapping type
+                return None
+
     def get_icon_or_name(leaf, length):
-        for identifier in ('name', 'window_title', 'window_instance', 'window_class'):
+        # interate through all identifiers, stop when first match is found
+        for identifier in ("name", "window_title", "window_instance", "window_class"):
             name = getattr(leaf, identifier, None)
             if name is None:
                 continue
-            for name_re in app_icons.keys():
-                if re.match(name_re, name, re.IGNORECASE) \
-                   and app_icons[name_re] in icons:
-                    return icons[app_icons[name_re]]
-        if name:
-            if "_no_match" in app_icons and app_icons["_no_match"] in icons:
-                return icons[app_icons["_no_match"]] + ('{}'.format(name) if no_match_show_name else '')
+            mapping = resolve_icon_or_mapping(name, leaf)
+            if mapping:
+                return mapping
+
+        # no mapping was found
+        window_class = name
+        if window_class:
+            # window class exists, no match was found
+            if "_no_match" in mappings and mappings["_no_match"] in icons:
+                return icons[mappings["_no_match"]] + (
+                    "{}".format(name) if no_match_show_name else ""
+                )
             return name[:length]
         else:
             # no identifiable information about this window
-            return '?'
+            return "?"
 
     def rename(i3, e):
         workspaces = i3.get_tree().workspaces()
@@ -68,13 +130,14 @@ def build_rename(i3, app_icons, args):
         workdicts = i3.get_workspaces()
         visible = [workdict.name for workdict in workdicts if workdict.visible]
         visworkspaces = []
-        focus = ([workdict.name for workdict in workdicts if workdict.focused] or [None])[0]
+        focus = (
+            [workdict.name for workdict in workdicts if workdict.focused] or [None]
+        )[0]
         focusname = None
 
         commands = []
         for workspace in workspaces:
-            names = [get_icon_or_name(leaf, length)
-                     for leaf in workspace.leaves()]
+            names = [get_icon_or_name(leaf, length) for leaf in workspace.leaves()]
             if uniq:
                 seen = set()
                 names = [x for x in names if x not in seen and not seen.add(x)]
@@ -90,16 +153,21 @@ def build_rename(i3, app_icons, args):
                 focusname = newname
 
             if workspace.name != newname:
-                commands.append('rename workspace "{}" to "{}"'.format(
-                    # escape any double quotes in old or new name.
-                    workspace.name.replace('"', '\\"'), newname.replace('"', '\\"')))
+                commands.append(
+                    'rename workspace "{}" to "{}"'.format(
+                        # escape any double quotes in old or new name.
+                        workspace.name.replace('"', '\\"'),
+                        newname.replace('"', '\\"'),
+                    )
+                )
                 if verbose:
                     print(commands[-1])
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
         # causing the wrong workspace to be activated last, which changes the focus.
-        i3.command(u';'.join(commands))
+        i3.command(u";".join(commands))
+
     return rename
 
 
@@ -108,10 +176,14 @@ def _get_i3_dir():
     for path in I3_CONFIG_PATHS:
         if os.path.isdir(path):
             return path
-    raise SystemExit("Could not find i3 config directory! Expected one of {} to be present".format(I3_CONFIG_PATHS))
+    raise SystemExit(
+        "Could not find i3 config directory! Expected one of {} to be present".format(
+            I3_CONFIG_PATHS
+        )
+    )
 
 
-def _get_app_icons(config_path=None):
+def _get_mapping(config_path=None):
     """Get app-icon mapping from config file or use defaults.
 
     Parameters
@@ -121,7 +193,7 @@ def _get_app_icons(config_path=None):
 
     Returns
     -------
-    dict[str,str]
+    dict[str, Union[dict, str]]
         Index of application-name (from i3) to icon-name (in font-awesome gallery).
 
     Raises
@@ -140,17 +212,19 @@ def _get_app_icons(config_path=None):
 
     if config_path:
         if not os.path.isfile(config_path):
-            raise SystemExit("Specified app-icon config path '{}' does not exist".format(config_path))
+            raise SystemExit(
+                "Specified app-icon config path '{}' does not exist".format(config_path)
+            )
     else:
         config_path = os.path.join(_get_i3_dir(), "app-icons.json")
 
     if os.path.isfile(config_path):
         with open(config_path) as f:
-            app_icons = json.load(f)
+            mappings = json.load(f)
         # normalise app-names to lower
-        return {k.lower(): v for k, v in app_icons.items()}
+        return {k.lower(): v for k, v in mappings.items()}
     else:
-        print('Using default app-icon config {}'.format(DEFAULT_APP_ICON_CONFIG))
+        print("Using default app-icon config {}".format(DEFAULT_APP_ICON_CONFIG))
         return dict(DEFAULT_APP_ICON_CONFIG)
 
 
@@ -158,56 +232,148 @@ def _verbose_startup(i3):
     for w in i3.get_tree().workspaces():
         print('WORKSPACE: "{}"'.format(w.name))
         for i, l in enumerate(w.leaves()):
-            print('''===> leave: {}
+            print(
+                """===> leave: {}
 -> name: {}
 -> window_title: {}
 -> window_instance: {}
--> window_class: {}'''.format(i, l.name, l.window_title, l.window_instance, l.window_class))
+-> window_class: {}""".format(
+                    i, l.name, l.window_title, l.window_instance, l.window_class
+                )
+            )
+
+
+def _is_valid_re(regex):
+    try:
+        re.compile(regex)
+        return True
+    except:
+        pass
+    return False
+
+
+def _validate_dict_mapping(app, mapping):
+    err = False
+    if type(mapping) != dict:
+        print("Specified mapping for app '{}' is not a dict!".format(app))
+        return False
+    if mapping.get("transform_title", None):
+        # a title transformation exists
+        tt = mapping["transform_title"]
+
+        if tt.get("from", None):
+            if not _is_valid_re(tt["from"]):
+                err = True
+                print(
+                    "Title transform mapping for app '{}' contains inalid regular expression in 'from' attribute!".format(
+                        app
+                    )
+                )
+        else:
+            err = True
+            print(
+                "Title transform mapping for app '{}' requires a 'from' key!".format(
+                    app
+                )
+            )
+
+        if not tt.get("to", None):
+            err = True
+            print(
+                "Title transform mapping for app '{}' requires a 'to' key!".format(app)
+            )
+
+    return err
+
+
+def _validate_config(config):
+    # check for missing icons and wrong configurations
+    err = False
+    for app, value in config.items():
+        icon_name = None
+        if type(value) == str:
+            icon_name = value
+        else:
+            # icon is optional when using a transform mapping
+            icon_name = value.get("icon", None)
+            if _validate_dict_mapping(app, value):
+                err = True
+
+        # make exceptions for custom-defined pango fonts
+        if icon_name is not None and not icon_name.startswith('<') and not icon_name in icons:
+            err = True
+            print(
+                "Specified icon '{}' for app '{}' does not exist!".format(
+                    icon_name, app
+                )
+            )
+
+    return err
 
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("-config-path",
-                        help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
-                        required=False)
-    parser.add_argument("-d", "--delimiter",
-                        help="The delimiter used to separate multiple window names in the same workspace.",
-                        required=False,
-                        default="|")
-    parser.add_argument("-l", "--max_title_length", help="Truncate title to specified length.",
-                        required=False,
-                        default=12,
-                        type=int)
-    parser.add_argument("-u", "--uniq", help="Remove duplicate icons in case the same application ",
-                        action="store_true",
-                        required=False,
-                        default=False)
-    parser.add_argument('-n', "--no-match-not-show-name",
-                        help="when you set '_no_match' in your app icons, if you don't want the application name set this option",
-                        action="store_true", required=False, default=False)
-    parser.add_argument("-v", "--verbose", help="verbose startup that will help you to find the right name of the window",
-                        action="store_true",
-                        required=False,
-                        default=False)
+    parser.add_argument(
+        "-config-path",
+        help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
+        required=False,
+    )
+    parser.add_argument(
+        "-d",
+        "--delimiter",
+        help="The delimiter used to separate multiple window names in the same workspace.",
+        required=False,
+        default="|",
+    )
+    parser.add_argument(
+        "-l",
+        "--max_title_length",
+        help="Truncate title to specified length.",
+        required=False,
+        default=12,
+        type=int,
+    )
+    parser.add_argument(
+        "-u",
+        "--uniq",
+        help="Remove duplicate icons in case the same application ",
+        action="store_true",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "-n",
+        "--no-match-not-show-name",
+        help="when you set '_no_match' in your app icons, if you don't want the application name set this option",
+        action="store_true",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="verbose startup that will help you to find the right name of the window",
+        action="store_true",
+        required=False,
+        default=False,
+    )
     args = parser.parse_args()
 
-    app_icons = _get_app_icons(args.config_path)
+    mappings = _get_mapping(args.config_path)
 
-    # check for missing icons
-    for app, icon_name in app_icons.items():
-        if not icon_name in icons:
-            print("Specified icon '{}' for app '{}' does not exist!".format(icon_name, app))
+    if _validate_config(mappings):
+        print("Errors in configuration found!")
 
     # build i3-connection
     i3 = i3ipc.Connection()
     if args.verbose:
         _verbose_startup(i3)
 
-    rename = build_rename(i3, app_icons, args)
-    for case in ['window::move', 'window::new', 'window::title', 'window::close']:
+    rename = build_rename(i3, mappings, args)
+    for case in ["window::move", "window::new", "window::title", "window::close"]:
         i3.on(case, rename)
     i3.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
