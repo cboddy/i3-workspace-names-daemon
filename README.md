@@ -112,7 +112,7 @@ If a window is not in the icon config then by default the window title will be d
 The maximum length of the displayed window title can be set with the command line argument `--max_title_length` or `-l`.
 
 To show a specific icon in place of unrecognised windows, specify an icon for window `_no_match` in the icon config.
-If you want to show only that icon (hiding the name) then use the `--no-unknown-name` or `-n` option.
+If you want to show only that icon (hiding the name) then use the `--no-match-not-show-name` or `-n` option.
 
 To hide all unknown applications, use the `--ignore-unknown` or `-i` option.
 

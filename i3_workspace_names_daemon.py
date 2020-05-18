@@ -63,7 +63,7 @@ def build_rename(i3, mappings, args):
     length = args.max_title_length
     uniq = args.uniq
     ignore_unknown = args.ignore_unknown
-    no_unknown_name = args.no_unknown_name
+    no_unknown_name = args.no_match_not_show_name
     verbose = args.verbose
 
     def get_icon(icon_name):
@@ -386,7 +386,7 @@ def main():
     )
     parser.add_argument(
         "-n",
-        "--no-unknown-name",
+        "--no-match-not-show-name",
         help="Don't display the name of unknown apps besides the fallback icon '_no_match'.",
         action="store_true",
         required=False,

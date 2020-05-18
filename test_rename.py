@@ -66,7 +66,7 @@ def base_config():
         "max_title_length": 12,
         "uniq": False,
         "ignore_unknown": False,
-        "no_unknown_name": False,
+        "no_match_not_show_name": False,
         "verbose": False,
     }
 
