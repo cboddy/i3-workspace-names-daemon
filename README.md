@@ -1,3 +1,5 @@
+![Test Suite](https://github.com/cboddy/i3-workspace-names-daemon/workflows/Python%20application/badge.svg)
+
 # i3-workspace-names-daemon
 
 This script dynamically updates [i3wm](https://i3wm.org/) workspace names based on the names of the windows therein. 
