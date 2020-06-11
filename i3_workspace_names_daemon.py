@@ -110,19 +110,21 @@ def build_rename(i3, mappings, args):
                 # apply the mapping now
                 target_mapping = mappings[name_re]
 
-                # is mapped to simple icon?
+                # is mapped to a fontawesome icon?
                 if type(target_mapping) == str:
                     return get_icon(target_mapping)
 
                 # is mapped to a title transformation?
-                if type(target_mapping) == dict and target_mapping.get(
-                    "transform_title", None
-                ):
-                    window_title = getattr(leaf, "window_title", "")
-                    return transform_title(target_mapping, window_title)
-
-                # other undefined mapping type
-                return None
+                if type(target_mapping) == dict:
+                    # it could be a dict, have the icon but not transform_title
+                    if target_mapping.get("transform_title"):
+                        window_title = getattr(
+                            leaf,
+                            target_mapping['transform_title'].get('on', "window_title"),
+                            ""
+                        )
+                        return transform_title(target_mapping, window_title)
+                    return get_icon(target_mapping.get('icon', ''))
 
     def get_app_label(leaf, length):
         # interate through all identifiers, stop when first match is found

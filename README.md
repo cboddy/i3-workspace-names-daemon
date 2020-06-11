@@ -2,7 +2,7 @@
 
 This script dynamically updates [i3wm](https://i3wm.org/) workspace names based on the names of the windows therein. 
 
-It also allows users to define an icon to show for a named window from the [Font Awesome](https://origin.fontawesome.com/icons?d=gallery) icon list.
+It also allows users to define an icon to show for a named window from the [Font Awesome](https://origin.fontawesome.com/icons?d=gallery) icon list or other system wide icon fonts.
 
 ### tl;dr 
 update i3-bar workspace names to look something like this
@@ -24,10 +24,10 @@ pip3 install --user i3-workspace-names-daemon
 ```
 ##### font 
 
-Install the [Font Awesome](https://origin.fontawesome.com/icons?d=gallery) font via your favourite package manager. This is necessary if you want to show an icon instead of a window's name in the i3 status bar. 
-
 You can use all icon fonts available on your system thanks to pango. [More here](#more-icons-with-pango).
- 
+
+
+You can install the [Font Awesome](https://origin.fontawesome.com/icons?d=gallery) font via your favourite package manager. This is necessary if you want to show an icon instead of a window's name in the i3 status bar.  
 
 For Debian/Ubuntu et al. 
 
@@ -116,13 +116,13 @@ If you want to show only that icon (hiding the name) then use the `--no-match-no
 
 To hide all unknown applications, use the `--ignore-unknown` or `-i` option.
 
-### picking icons 
-
-The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
-
 ### windows delimiter
 
 The window delimiter can be specified with `-d` or `--delimiter` parameter by default it is `|`.
+
+### picking icons 
+
+The easiest way to pick an icon is to search for one in the [gallery](https://origin.fontawesome.com/icons?d=gallery). **NB: the "pro" icons are not available in the debian package.**
 
 ### more icons with pango
 
@@ -135,7 +135,8 @@ To check which fonts are available for use in pango, run the command
 pango-list
 ```
 
-To test if you properly installed all required fonts and the markup is valid, you can use the following command:
+To *test* if you properly installed all required fonts and the markup is valid, you can use the following command,
+assuming you installed the [file-icons](https://github.com/file-icons/icons/blob/master/charmap.md) or [all-the-icons](https://github.com/domtronn/all-the-icons.el/blob/master/data/data-fileicons.el) fonts (links are to the current page with codes that you need to put in the markup, not the homepage of the fonts):
 ```bash
 echo -e '<span font_desc="file-icons">\ue926</span>' | pango-view --markup /dev/stdin
 ```
@@ -147,7 +148,6 @@ It should render the markup correctly. If not, you need to check your font insta
 <img src="https://user-images.githubusercontent.com/1242917/80286549-5b66dc80-872c-11ea-8d3a-db1488ff299c.png"></img>
 
 The following example displays an emacs icon for all instances of emacs and the text "FF" in red for every firefox instance.
-The emacs icon requires the `file-icons` font to be installed.
 
 ```json
 {
@@ -163,6 +163,10 @@ This information can be displayed in the i3bar by using the `transform_title` di
 
 Instead of a single string for the icon definition, use a json object as the property. 
 For the title transformation the property `transform_title` is required.
+
+#### `on`
+
+The window identifier to be used, the same as in [matching windows](#matching-windows) paragraph, defaults to `window_title` that should be good for most of the use cases
 
 #### `from`
 
@@ -181,6 +185,7 @@ You can use strings that were matched by capturing groups in the `from` regex.
 
 Enables shortening the resulting displayed strings in a more recognizable name.
 The name is split into groups of alphanumeric strings, which are all cut to a length of 3 and joined together using the adjacent separator in the original string.
+This is applied after `from` -> `to` regex modification is done.
 Example: `i3-workspace_names+daemon` → `i3-wor_nam+dae`
 
 #### example: emacs project title
