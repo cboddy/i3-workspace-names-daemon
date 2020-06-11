@@ -33,18 +33,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest --cov=.
+        pytest --cov=. --cov-report=xml
 
-    - name: Coveralls
-      uses: AndreMiras/coveralls-python-action@develop
+    - name: CodeCov
+      uses: codecov/codecov-action@v1
       with:
-        parallel: true
-
-  coveralls_finish:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
+        file: ./coverage.xml
