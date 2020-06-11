@@ -6,7 +6,7 @@ import os.path
 import argparse
 import re
 import i3ipc
-from fa_icons import icons
+from fa_icons import icons as fa_icons
 
 I3_CONFIG_PATHS = tuple(
     os.path.expanduser(path)
@@ -70,8 +70,8 @@ def build_rename(i3, mappings, args):
         # is pango markup?
         if icon_name.startswith("<"):
             return icon_name
-        if icon_name in icons:
-            return icons[icon_name]
+        if icon_name in fa_icons:
+            return fa_icons[icon_name]
         return None
 
     def transform_title(target_mapping, window_title):
@@ -110,7 +110,6 @@ def build_rename(i3, mappings, args):
                 # apply the mapping now
                 target_mapping = mappings[name_re]
 
-                # is mapped to a fontawesome icon?
                 if type(target_mapping) == str:
                     return get_icon(target_mapping)
 
@@ -141,18 +140,18 @@ def build_rename(i3, mappings, args):
             return None
 
         window_class = name
-        no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in icons
+        no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in fa_icons
         if window_class:
             # window class exists, no match was found
             if no_match_fallback:
-                return icons[mappings["_no_match"]] + (
+                return fa_icons[mappings["_no_match"]] + (
                     "" if no_unknown_name else truncate(name, length)
                 )
             return truncate(name, length)
         else:
             # no identifiable information about this window
             if no_match_fallback:
-                return icons[mappings["_no_match"]]
+                return fa_icons[mappings["_no_match"]]
             return "?"
 
     def rename(i3, e):
@@ -281,8 +280,7 @@ def _is_valid_re(regex):
         re.compile(regex)
         return True
     except:
-        pass
-    return False
+        return False
 
 
 def _validate_dict_mapping(app, mapping):
@@ -336,7 +334,7 @@ def _validate_config(config):
         if (
             icon_name is not None
             and not icon_name.startswith("<")
-            and not icon_name in icons
+            and not icon_name in fa_icons
         ):
             err = True
             print(
