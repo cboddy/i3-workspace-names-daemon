@@ -1,4 +1,5 @@
 ![Test Suite](https://github.com/cboddy/i3-workspace-names-daemon/workflows/Python%20application/badge.svg)
+[![codecov.io](https://codecov.io/github/cboddy/i3-workspace-names-daemon/coverage.svg?branch=master)](https://codecov.io/github/cboddy/i3-workspace-names-daemon?branch=master)
 
 # i3-workspace-names-daemon
 
