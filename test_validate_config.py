@@ -63,8 +63,3 @@ class TestValidateConfig(unittest.TestCase):
         config = {"appbla": {"transform_title": {"from": ":(.*(", "to": r"zyx",}}}
         err = _validate_config(config)
         self.assertTrue(err)
-
-
-if __name__ == "__main__":
-    # disable stdout
-    unittest.main(buffer=True)

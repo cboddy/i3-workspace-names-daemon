@@ -158,20 +158,6 @@ class TestRename(unittest.TestCase):
         actual = get_names(mi3.cmd)
         self.assertListEqual(expected, actual)
 
-    def test_two_apps_same_uniq(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.uniq = True
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("firefox"), MockLeaf("firefox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
     def test_unknown_name(self):
         mappings = base_mappings()
         args = AttrDict(base_config())
@@ -400,7 +386,3 @@ class TestRename(unittest.TestCase):
         expected = ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
         actual = get_names(mi3.cmd)
         self.assertListEqual(expected, actual)
-
-
-if __name__ == "__main__":
-    unittest.main()
