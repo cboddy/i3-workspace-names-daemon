@@ -1,0 +1,5 @@
+[report]
+show_missing = True
+fail_under = 90
+# flycheck are files created by my emacs config, and immediatly deleted, you should never see them, but if you fly too :)
+omit = setup.py, flycheck_*

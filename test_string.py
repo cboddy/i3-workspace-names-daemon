@@ -51,7 +51,3 @@ class TestString(unittest.TestCase):
         expected = "i3-wor-nam-dae"
         actual = compress(original)
         self.assertEqual(expected, actual)
-
-
-if __name__ == "__main__":
-    unittest.main()
