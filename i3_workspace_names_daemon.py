@@ -51,8 +51,8 @@ def build_rename(i3, mappings, args):
     i3: `i3ipc.i3ipc.Connection`
     mappings: `dict[str, Union[dict, str]]`
         Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
-    delim: `str`
-        Delimiter to use when build workspace name from app names/icons.
+    args: `object`
+        Arguments parameters usually from argparse
 
     Returns
     -------
@@ -162,7 +162,7 @@ def build_rename(i3, mappings, args):
                 return fa_icons[mappings["_no_match"]]
             return "?"
 
-    def rename(i3, e):
+    def rename(i3, _):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
