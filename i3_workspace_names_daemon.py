@@ -69,9 +69,17 @@ def build_rename(i3, mappings, args):
     def get_icon(icon_name):
         # is pango markup?
         if icon_name.startswith("<"):
+            return icon_name  # you can also use colored text and so on
+        try:
+            # is fontawesome icon name?
+            icon_name.encode('ascii')
+            if icon_name in fa_icons:
+                return fa_icons[icon_name]
+        except UnicodeEncodeError as ex:
+            # is unicode icon, this is reached when you specified another font
+            # in i3 bar config, so you put /ucode directely (instead of from fa_icons)
+            # otherwise... if fontawesome gets updated and we don't still provide the new icon mapping.
             return icon_name
-        if icon_name in fa_icons:
-            return fa_icons[icon_name]
         return None
 
     def transform_title(target_mapping, window_title):

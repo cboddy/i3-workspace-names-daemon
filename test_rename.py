@@ -386,3 +386,33 @@ class TestRename(unittest.TestCase):
         expected = ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
         actual = get_names(mi3.cmd)
         self.assertListEqual(expected, actual)
+
+    def test_no_icon_found(self):
+        mappings = base_mappings()
+        mappings['emacs'] = 'not_there'
+        args = AttrDict(base_config())
+
+        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs")),)
+
+        rename = build_rename(mi3, mappings, args)
+        rename(mi3, None)
+
+        expected = ['1: emacs']
+        actual = get_names(mi3.cmd)
+        self.assertListEqual(expected, actual)
+
+    def test_text_transform_fallback_to_just_icon(self):
+        mappings = base_mappings()
+        mappings['emacs'] = {
+            'icon': '<span font_desc="file-icons">\ue926</span>',
+        }
+        args = AttrDict(base_config())
+
+        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs")),)
+
+        rename = build_rename(mi3, mappings, args)
+        rename(mi3, None)
+
+        expected = ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
+        actual = get_names(mi3.cmd)
+        self.assertListEqual(expected, actual)

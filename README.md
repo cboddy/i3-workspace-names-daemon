@@ -49,6 +49,18 @@ Add the following line to your ``~/.i3/config``.
 exec_always --no-startup-id exec i3-workspace-names-daemon
 ```
 
+
+Configure the `bar` config block to use the fontawesome font, for example:
+```
+bar {
+    status_command py3status --config ~/.config/i3status-bottom.conf -b
+    position bottom
+    mode hide
+    font pango:FontAwesome 18
+}
+```
+
+
 If you use the ``$mod+1`` etc. shortcuts to switch workspaces then update the following so that the *switch to workspace* and *move focused window to workspace* **shortcuts still work**. 
 
 
