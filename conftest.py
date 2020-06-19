@@ -82,28 +82,27 @@ class MockI3:
 def mocki3(monkeypatch):
     def _mocki3(*workspaces):
         i3 = MockI3(*workspaces)
+        monkeypatch.setattr(i3ipc, 'Connection', lambda: i3)
         return i3
-    monkeypatch.setattr(i3ipc, 'Connection', _mocki3)
     return _mocki3
 
 
+def argparse_gen(args):
+    class ArgumentParser:
+        def __init__(self, doc):
+            pass
+
+        def add_argument(self, *_, **__):
+            pass
+
+        def parse_args(self):
+            return AttrDict(args)
+    return ArgumentParser
+
 @pytest.fixture
 def argparse_fix(monkeypatch):
-    def _argparse_fix(args):
-        def argparse_gen(args):
-            class ArgumentParser:
-                def __init__(self, doc):
-                    pass
-
-                def add_argument(self, *_, **__):
-                    pass
-
-                def parse_args(self):
-                    return AttrDict(args)
-
-            return ArgumentParser
-
+    def _argparse_fix(_args):
         args = DEFAULT_ARGS.copy()
-        args.update({'config_path': ''})
+        args.update(_args)
         monkeypatch.setattr(argparse, 'ArgumentParser', argparse_gen(args))
     return _argparse_fix

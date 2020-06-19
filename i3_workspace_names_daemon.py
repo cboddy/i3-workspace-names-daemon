@@ -27,6 +27,7 @@ DEFAULT_APP_ICON_CONFIG = {
 
 
 DEFAULT_ARGS = {
+    'config_path': None,
     'delimiter': '|',
     'max_title_length': 12,
     'verbose': False,
@@ -113,13 +114,6 @@ def build_rename(i3, mappings, args):
         if nr_subs > 0:
             return "{}{}".format(icon, result)
 
-        # fallback: title did not match, but icon defined
-        if icon:
-            return icon
-
-        # nothing matched
-        return None
-
     def resolve_icon_or_mapping(name, leaf):
         for name_re in mappings.keys():
             if re.match(name_re, name, re.IGNORECASE):
@@ -193,8 +187,12 @@ def build_rename(i3, mappings, args):
             names = delim.join(names)
             if int(workspace.num) >= 0:
                 newname = u"{}: {}".format(workspace.num, names)
-            else:
-                newname = names
+            else:  # pragma: no cover (due to https://github.com/nedbat/coveragepy/issues/198 )
+                # named workspaces have -1 as number
+                # continue here means the name will stay untouched
+                # go into your i3 config if you want to customize it,
+                # but it will always be static
+                continue
 
             if workspace.name in visible:
                 visworkspaces.append(newname)
@@ -302,9 +300,6 @@ def _is_valid_re(regex):
 
 def _validate_dict_mapping(app, mapping):
     err = False
-    if type(mapping) != dict:
-        print("Specified mapping for app '{}' is not a dict!".format(app))
-        return False
     if mapping.get("transform_title", None):
         # a title transformation exists
         tt = mapping["transform_title"]
@@ -335,17 +330,20 @@ def _validate_dict_mapping(app, mapping):
 
 
 def _validate_config(config):
+    """returns True when THERE IS something wrong"""
     # check for missing icons and wrong configurations
-    err = False
     for app, value in config.items():
         icon_name = None
         if type(value) == str:
             icon_name = value
         else:
             # icon is optional when using a transform mapping
+            if type(value) != dict:
+                print("Specified mapping for app '{}' is not a dict!".format(app))
+                return True
             icon_name = value.get("icon", None)
             if _validate_dict_mapping(app, value):
-                err = True
+                return True
 
         # make exceptions for custom-defined pango fonts
         if (
@@ -353,14 +351,13 @@ def _validate_config(config):
             and not icon_name.startswith("<")
             and not icon_name in fa_icons
         ):
-            err = True
             print(
                 "Specified icon '{}' for app '{}' does not exist!".format(
                     icon_name, app
                 )
             )
+            return True
 
-    return err
 
 
 def main():

@@ -13,6 +13,7 @@ def base_mappings():
         "chromium-browser": "chrome",
         "firefox": "firefox",
         'pango_emacs': '<span font_desc="file-icons">\ue926</span>',
+        'emacs_unicode': '\ue926',
     }
 
 
@@ -30,6 +31,9 @@ def get_names(cmd):
     ((  # two apps in one workspace
         (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
     ), {}, {}, ['1: \uf269|\uf268']),
+    ((  # two apps in one workspace, verbose
+        (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
+    ), {}, {'verbose': True}, ['1: \uf269|\uf268']),
     ((  # two apps in one workspace, with space delimiter
         (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
     ), {}, {'delimiter': ' '}, ['1: \uf269 \uf268']),
@@ -112,6 +116,9 @@ def get_names(cmd):
     ((  # pango markup
         (1, MockLeaf('pango_emacs')),
     ), {}, {}, ['1: <span font_desc=\\"file-icons\\">\ue926</span>']),
+    ((  # unicode directely
+        (1, MockLeaf('emacs_unicode')),
+    ), {}, {}, ['1: \ue926']),
     ((  # icon defined but not found, maybe mispelled
         (1, MockLeaf('emacs')),
     ), {'emacs': 'not_there'}, {}, ['1: emacs']),
@@ -120,8 +127,15 @@ def get_names(cmd):
             (1, MockLeaf('emacs')),
         ), {'emacs': {
             'icon': '<span font_desc=\"file-icons\">\ue926</span>',
-        }},{}, ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
+        }}, {}, ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
     ),
+    ((  # none in every window prop
+        (1, MockLeaf(None, None, None, None)),
+    ), {}, {}, ['1: ?']),
+    ((  # workspace number -1  (means named workspace)
+        # leave it untouched
+        (-1, MockLeaf('firefox')),
+    ), {}, {}, ['']),  # in order to assert expected workspace name a separate test would be needed
 ))
 def test_rename(workspaces, mappings, args, expected, mocki3):
     _mappings = base_mappings()
