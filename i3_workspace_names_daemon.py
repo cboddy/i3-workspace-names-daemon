@@ -26,6 +26,15 @@ DEFAULT_APP_ICON_CONFIG = {
 }
 
 
+DEFAULT_ARGS = {
+    'delimiter': '|',
+    'max_title_length': 12,
+    'verbose': False,
+    'no_match_not_show_name': False,
+    'ignore_unknown': False,
+    'uniq': False,
+}
+
 def truncate(text, length, ellipsis="…"):
     if len(text) <= length:
         return text
@@ -366,14 +375,14 @@ def main():
         "--delimiter",
         help="The delimiter used to separate multiple window names in the same workspace.",
         required=False,
-        default="|",
+        default=DEFAULT_ARGS['delimiter'],
     )
     parser.add_argument(
         "-l",
         "--max-title-length",
         help="Truncate title to specified length.",
         required=False,
-        default=12,
+        default=DEFAULT_ARGS['max_title_length'],
         type=int,
     )
     parser.add_argument(
@@ -382,7 +391,7 @@ def main():
         help="Remove duplicate icons.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['uniq'],
     )
     parser.add_argument(
         "-i",
@@ -390,7 +399,7 @@ def main():
         help="Ignore apps without a icon definitions.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['ignore_unknown'],
     )
     parser.add_argument(
         "-n",
@@ -398,7 +407,7 @@ def main():
         help="Don't display the name of unknown apps besides the fallback icon '_no_match'.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['no_match_not_show_name'],
     )
     parser.add_argument(
         "-v",
@@ -406,7 +415,7 @@ def main():
         help="Verbose startup that will help you to find the right match name for applications.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['verbose'],
     )
     args = parser.parse_args()
 
@@ -426,5 +435,5 @@ def main():
     i3.main()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
