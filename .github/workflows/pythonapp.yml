@@ -34,7 +34,7 @@ jobs:
     - name: make i3 config directory and app-icons.json file
       run: |
           mkdir /home/runner/.config/i3
-          touch /home/runner/.config/i3/app-icons.json
+          echo "{}" > /home/runner/.config/i3/app-icons.json
     - name: Test with pytest
       run: |
         pytest --cov=. --cov-report=xml
