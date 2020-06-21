@@ -4,9 +4,14 @@
 import json
 import os.path
 import argparse
+import logging
 import re
 import i3ipc
+from pprint import pformat
 from fa_icons import icons as fa_icons
+
+
+log = logging.getLogger()  # I mean... it's ok to use root logger...
 
 I3_CONFIG_PATHS = tuple(
     os.path.expanduser(path)
@@ -34,6 +39,7 @@ DEFAULT_ARGS = {
     'no_match_not_show_name': False,
     'ignore_unknown': False,
     'uniq': False,
+    'log_path': None,
 }
 
 def truncate(text, length, ellipsis="…"):
@@ -136,32 +142,39 @@ def build_rename(i3, mappings, args):
                         return transform_title(target_mapping, window_title)
                     return get_icon(target_mapping.get('icon', ''))
 
-    def get_app_label(leaf, length):
-        # interate through all identifiers, stop when first match is found
+
+    def get_app_identifiers(leaf):
+        identifiers = {}
         for identifier in ("name", "window_title", "window_instance", "window_class"):
             name = getattr(leaf, identifier, None)
-            if name is None:
-                continue
+            identifiers[identifier] = name if name is not None else ''  # cannot use just '' in getattr
+        return identifiers
+
+    def get_app_label(leaf, length):
+        for name in get_app_identifiers(leaf).values():
             mapping = resolve_icon_or_mapping(name, leaf)
             if mapping:
                 return mapping
 
+        log.warning('no match found for:\n%s', pformat(
+            get_app_identifiers(leaf),
+            indent=4,
+        ))
         # no mapping was found
         if ignore_unknown:
             return None
 
         no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in fa_icons
-        for identifier in ("name", "window_title", "window_instance", "window_class"):
-            name = getattr(leaf, identifier, None)
+        for name in get_app_identifiers(leaf).values():
+            # window class exists, no match was found
             if not name:
                 continue
-            # window class exists, no match was found
             if no_match_fallback:
                 return fa_icons[mappings["_no_match"]] + (
                     "" if no_unknown_name else truncate(name, length)
                 )
             return truncate(name, length)
-        # no identifiable information about this window
+        log.error('no identifiable information about this window')
         return "?"
 
     def rename(i3, _):
@@ -210,7 +223,7 @@ def build_rename(i3, mappings, args):
                     )
                 )
                 if verbose:
-                    print(commands[-1])
+                    log.debug(commands[-1])
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
@@ -272,16 +285,15 @@ def _get_mapping(config_path=None):
             mappings = json.load(f)
         # normalise app-names to lower
         return {k.lower(): v for k, v in mappings.items()}
-    else:
-        print("Using default app-icon config {}".format(DEFAULT_APP_ICON_CONFIG))
-        return dict(DEFAULT_APP_ICON_CONFIG)
+    log.warning("Using default app-icon config %s", DEFAULT_APP_ICON_CONFIG)
+    return dict(DEFAULT_APP_ICON_CONFIG)
 
 
 def _verbose_startup(i3):
     for w in i3.get_tree().workspaces():
-        print('WORKSPACE: "{}"'.format(w.name))
+        log.debug('WORKSPACE: "{}"'.format(w.name))
         for i, l in enumerate(w.leaves()):
-            print(
+            log.debug(
                 """===> leave: {}
 -> name: {}
 -> window_title: {}
@@ -309,14 +321,14 @@ def _validate_dict_mapping(app, mapping):
         if tt.get("from", None):
             if not _is_valid_re(tt["from"]):
                 err = True
-                print(
+                log.error(
                     "Title transform mapping for app '{}' contains invalid regular expression in 'from' attribute!".format(
                         app
                     )
                 )
         else:
             err = True
-            print(
+            log.error(
                 "Title transform mapping for app '{}' requires a 'from' key!".format(
                     app
                 )
@@ -324,7 +336,7 @@ def _validate_dict_mapping(app, mapping):
 
         if not tt.get("to", None):
             err = True
-            print(
+            log.error(
                 "Title transform mapping for app '{}' requires a 'to' key!".format(app)
             )
 
@@ -341,7 +353,7 @@ def _validate_config(config):
         else:
             # icon is optional when using a transform mapping
             if type(value) != dict:
-                print("Specified mapping for app '{}' is not a dict!".format(app))
+                log.error("Specified mapping for app '{}' is not a dict!".format(app))
                 return True
             icon_name = value.get("icon", None)
             if _validate_dict_mapping(app, value):
@@ -353,7 +365,7 @@ def _validate_config(config):
             and not icon_name.startswith("<")
             and not icon_name in fa_icons
         ):
-            print(
+            log.error(
                 "Specified icon '{}' for app '{}' does not exist!".format(
                     icon_name, app
                 )
@@ -411,17 +423,31 @@ def main():
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Verbose startup that will help you to find the right match name for applications.",
+        help="Verbose logging that will help you to find the right match name for applications.",
         action="store_true",
         required=False,
         default=DEFAULT_ARGS['verbose'],
     )
+    parser.add_argument(
+        '--log-path',
+        help="path of the log to be generated, it will be overwriten every time this script starts. by default console will be used instead of a file",
+        required=False,
+        default=DEFAULT_ARGS['log_path'],
+    )
     args = parser.parse_args()
+
+    logging.basicConfig(
+        filename=args.log_path,
+        filemode='w',
+        level=logging.WARNING
+    )
+    if args.verbose:
+        log.setLevel(level=logging.DEBUG)
 
     mappings = _get_mapping(args.config_path)
 
     if _validate_config(mappings):
-        print("Errors in configuration found!")
+        log.error("Errors in configuration found!")
 
     # build i3-connection
     i3 = i3ipc.Connection()
