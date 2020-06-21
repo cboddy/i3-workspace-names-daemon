@@ -186,7 +186,10 @@ def build_rename(i3, mappings, args):
             names = [x for x in names if x]
             names = delim.join(names)
             if int(workspace.num) >= 0:
-                newname = u"{}: {}".format(workspace.num, names)
+                if len(names) != 0:
+                    newname = u"{}: {}".format(workspace.num, names)
+                else:
+                    newname = str(workspace.num)
             else:  # pragma: no cover (due to https://github.com/nedbat/coveragepy/issues/198 )
                 # named workspaces have -1 as number
                 # continue here means the name will stay untouched

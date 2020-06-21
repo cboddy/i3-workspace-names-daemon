@@ -66,15 +66,15 @@ def get_names(cmd):
     ((  # ignore unknown option
         # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox')),
-    ), {}, {'ignore_unknown': True}, ['1: ']),
+    ), {}, {'ignore_unknown': True}, ['1']),
     ((  # ignore unknown option, with long name
         # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox-giregox-giregox')),
-    ), {}, {'ignore_unknown': True}, ['1: ']),
+    ), {}, {'ignore_unknown': True}, ['1']),
     ((  # ignore unknown option, no class
         # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox', '', '', '')),
-    ), {}, {'ignore_unknown': True}, ['1: ']),
+    ), {}, {'ignore_unknown': True}, ['1']),
     # TEXT TRANSFORMATIONS
     (
         (  # just transform title through regex replace
