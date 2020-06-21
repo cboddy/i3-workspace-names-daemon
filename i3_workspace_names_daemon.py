@@ -150,20 +150,19 @@ def build_rename(i3, mappings, args):
         if ignore_unknown:
             return None
 
-        window_class = name
         no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in fa_icons
-        if window_class:
+        for identifier in ("name", "window_title", "window_instance", "window_class"):
+            name = getattr(leaf, identifier, None)
+            if not name:
+                continue
             # window class exists, no match was found
             if no_match_fallback:
                 return fa_icons[mappings["_no_match"]] + (
                     "" if no_unknown_name else truncate(name, length)
                 )
             return truncate(name, length)
-        else:
-            # no identifiable information about this window
-            if no_match_fallback:
-                return fa_icons[mappings["_no_match"]]
-            return "?"
+        # no identifiable information about this window
+        return "?"
 
     def rename(i3, _):
         workspaces = i3.get_tree().workspaces()

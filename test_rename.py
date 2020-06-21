@@ -19,7 +19,7 @@ def base_mappings():
 
 def get_names(cmd):
     commands = cmd.split(";")
-    return [x[len('rename workspace "" to "') : -1] for x in commands]
+    return [x[len('rename workspace "" to "'): -1] for x in commands]
 
 
 @pytest.mark.parametrize('workspaces,mappings,args,expected', (
@@ -49,10 +49,9 @@ def get_names(cmd):
     ((  # unknown name that is long gets truncated with ellipsis
         (1, MockLeaf('giregox-giregox-giregox')),
     ), {}, {}, ['1: giregox-gire…']),
-    ((  # unknown name and no window class, expected plain "?"
-        # TODO: it this correct? should we expect "giregox" instead of "?"
+    ((  # unknown name and no window class, expected truncated window name
         (1, MockLeaf('giregox', '', '', '')),
-    ), {}, {}, ['1: ?']),
+    ), {}, {}, ['1: giregox']),
     ((  # unknown name, with _no_match icon
         (1, MockLeaf('giregox')),
     ), {'_no_match': 'question'}, {}, ['1: \uf128giregox']),
@@ -60,19 +59,15 @@ def get_names(cmd):
         (1, MockLeaf('giregox-giregox')),
     ), {'_no_match': 'question'}, {}, ['1: \uf128giregox-gire…']),
     ((  # unknown name, no CLASS and no_match icon
-        # TODO: as the above TODO is this correct?
         (1, MockLeaf('giregox', '', '', '')),
-    ), {'_no_match': 'question'}, {}, ['1: \uf128']),
+    ), {'_no_match': 'question'}, {}, ['1: \uf128giregox']),
     ((  # ignore unknown option
-        # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox')),
     ), {}, {'ignore_unknown': True}, ['1']),
     ((  # ignore unknown option, with long name
-        # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox-giregox-giregox')),
     ), {}, {'ignore_unknown': True}, ['1']),
     ((  # ignore unknown option, no class
-        # TODO: is "1: " right? should it be just "1"?
         (1, MockLeaf('giregox', '', '', '')),
     ), {}, {'ignore_unknown': True}, ['1']),
     # TEXT TRANSFORMATIONS
@@ -131,6 +126,9 @@ def get_names(cmd):
     ),
     ((  # none in every window prop
         (1, MockLeaf(None, None, None, None)),
+    ), {}, {}, ['1: ?']),
+    ((  # empty string in every window prop
+        (1, MockLeaf('')),
     ), {}, {}, ['1: ?']),
     ((  # workspace number -1  (means named workspace)
         # leave it untouched
