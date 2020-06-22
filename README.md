@@ -46,7 +46,7 @@ sudo apt install fonts-font-awesome
 Add the following line to your ``~/.i3/config``.
 
 ```
-exec_always --no-startup-id exec i3-workspace-names-daemon --log-path /var/log/i3-workspaces-names-daemon
+exec_always --no-startup-id exec i3-workspace-names-daemon --log-path /tmp/i3-workspaces-names-daemon.log
 ```
 
 
@@ -122,7 +122,7 @@ If there is no window name available a question mark is shown instead.
 
 Another (*simpler*) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
 
-Meanwhile the *simplest* way is to run `tail -f /var/log/i3-workspaces-names-daemon` (assuming you are using `--log-path` option)
+Meanwhile the *simplest* way is to run `tail -f /tmp/i3-workspaces-names-daemon.log` (assuming you are using `--log-path` option)
 
 
 ### unrecognised windows
