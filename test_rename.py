@@ -1,388 +1,146 @@
-import unittest
+import pytest
+from conftest import AttrDict, MockWorkspace, MockLeaf
 
-from i3_workspace_names_daemon import build_rename
-
-
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
-
-
-class MockLeaf:
-    def __init__(self, name, title=None, instance=None, wc=None):
-        self.name = name
-        if title is not None:
-            self.window_title = title
-        else:
-            self.window_title = name
-        if instance is not None:
-            self.window_instance = instance
-        else:
-            self.window_instance = name
-        if wc is not None:
-            self.window_class = wc
-        else:
-            self.window_class = name
-
-
-class MockWorkspace:
-    def __init__(self, num, *leaves):
-        self.num = num
-        self.leaves_ = leaves
-        self.visible = True
-        self.focused = True
-        self.name = ""
-
-    def leaves(self):
-        return self.leaves_
-
-
-class MockTree:
-    def __init__(self, mi3):
-        self.mi3 = mi3
-
-    def workspaces(self):
-        return self.mi3.workspaces
-
-
-class MockI3:
-    def __init__(self, *workspaces):
-        self.workspaces = workspaces
-
-    def get_tree(self):
-        return MockTree(self)
-
-    def get_workspaces(self):
-        return self.workspaces
-
-    def command(self, cmd):
-        self.cmd = cmd
+from i3_workspace_names_daemon import build_rename, DEFAULT_ARGS
 
 
 def base_config():
-    return {
-        "delimiter": "|",
-        "max_title_length": 12,
-        "uniq": False,
-        "ignore_unknown": False,
-        "no_match_not_show_name": False,
-        "verbose": False,
-    }
+    return AttrDict(DEFAULT_ARGS)
 
 
 def base_mappings():
     return {
         "chromium-browser": "chrome",
         "firefox": "firefox",
+        'pango_emacs': '<span font_desc="file-icons">\ue926</span>',
+        'emacs_unicode': '\ue926',
     }
 
 
 def get_names(cmd):
     commands = cmd.split(";")
-    return [x[len('rename workspace "" to "') : -1] for x in commands]
-
-
-class TestRename(unittest.TestCase):
-    def test_simple(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(
-            MockWorkspace(1, MockLeaf("firefox")),
-            MockWorkspace(2, MockLeaf("chromium-browser")),
-        )
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269", "2: \uf268"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_two_apps_one_ws(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(
-            MockWorkspace(1, MockLeaf("firefox"), MockLeaf("chromium-browser"))
-        )
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269|\uf268"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_two_apps_one_ws_delim(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.delimiter = " "
-
-        mi3 = MockI3(
-            MockWorkspace(1, MockLeaf("firefox"), MockLeaf("chromium-browser"))
-        )
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269 \uf268"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_two_apps_same(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("firefox"), MockLeaf("firefox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269|\uf269"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_two_apps_same_uniq(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.uniq = True
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("firefox"), MockLeaf("firefox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf269"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: giregox"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_long_unknown_name(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox-giregox-giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: giregox-gire…"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name_no_window_class(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox", "", "", "")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: ?"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name_no_match_icon(self):
-        mappings = base_mappings()
-        mappings["_no_match"] = "question"
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf128giregox"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_long_unknown_name_no_match_icon(self):
-        mappings = base_mappings()
-        mappings["_no_match"] = "question"
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox-giregox-giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf128giregox-gire…"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name_no_window_class_no_match_icon(self):
-        mappings = base_mappings()
-        mappings["_no_match"] = "question"
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox", "", "", "")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf128"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name_ignore(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.ignore_unknown = True
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: "]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_long_unknown_name_ignore(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.ignore_unknown = True
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox-giregox-giregox")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: "]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_unknown_name_no_window_class_ignore(self):
-        mappings = base_mappings()
-        args = AttrDict(base_config())
-        args.ignore_unknown = True
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("giregox", "", "", "")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: "]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_transform_title(self):
-        mappings = base_mappings()
-        mappings["emacs"] = {
-            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1",}
-        }
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: bar"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_transform_title_icon(self):
-        mappings = base_mappings()
-        mappings["emacs"] = {
-            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1",},
-            "icon": "play",
-        }
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf04bbar"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_transform_title_replace_all(self):
-        mappings = base_mappings()
-        mappings["emacs"] = {
-            "transform_title": {"from": r"(.*)", "to": r"replaced",},
-        }
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: replaced"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_transform_title_replace_all_with_icon(self):
-        mappings = base_mappings()
-        mappings["emacs"] = {
-            "transform_title": {"from": r"(.*)", "to": r"replaced",},
-            "icon": "play",
-        }
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs", "foo [bar] baz")))
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: \uf04breplaced"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_transform_title_compress(self):
-        mappings = base_mappings()
-        mappings["emacs"] = {
-            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1", "compress": True}
-        }
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(
-            MockWorkspace(
-                1, MockLeaf("emacs", "project [a very-too_long+window title]")
-            )
-        )
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ["1: a ver-too_lo…"]
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
-
-    def test_pango(self):
-        mappings = base_mappings()
-        mappings["emacs"] = '<span font_desc="file-icons">\ue926</span>'
-
-        args = AttrDict(base_config())
-
-        mi3 = MockI3(MockWorkspace(1, MockLeaf("emacs")),)
-
-        rename = build_rename(mi3, mappings, args)
-        rename(mi3, None)
-
-        expected = ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
-        actual = get_names(mi3.cmd)
-        self.assertListEqual(expected, actual)
+    return [x[len('rename workspace "" to "'): -1] for x in commands]
+
+
+@pytest.mark.parametrize('workspaces,mappings,args,expected', (
+    ((), {}, {}, [""]),  # no windows in any workspace
+    ((  # two workspaces
+        (1, MockLeaf("firefox")),
+        (2, MockLeaf("chromium-browser")),
+    ), {}, {}, ['1: \uf269', '2: \uf268']),
+    ((  # two apps in one workspace
+        (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
+    ), {}, {}, ['1: \uf269|\uf268']),
+    ((  # two apps in one workspace, verbose
+        (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
+    ), {}, {'verbose': True}, ['1: \uf269|\uf268']),
+    ((  # two apps in one workspace, with space delimiter
+        (1, MockLeaf("firefox"), MockLeaf("chromium-browser")),
+    ), {}, {'delimiter': ' '}, ['1: \uf269 \uf268']),
+    ((  # twice same app in a workspace
+        (1, MockLeaf("firefox"), MockLeaf("firefox")),
+    ), {}, {}, ['1: \uf269|\uf269']),
+    ((  # twice same app in a workspace, with uniq
+        (1, MockLeaf("firefox"), MockLeaf("firefox")),
+    ), {}, {'uniq': True}, ['1: \uf269']),
+    ((  # unknown name
+        (1, MockLeaf("giregox")),
+    ), {}, {}, ['1: giregox']),
+    ((  # unknown name that is long gets truncated with ellipsis
+        (1, MockLeaf('giregox-giregox-giregox')),
+    ), {}, {}, ['1: giregox-gire…']),
+    ((  # unknown name and no window class, expected truncated window name
+        (1, MockLeaf('giregox', '', '', '')),
+    ), {}, {}, ['1: giregox']),
+    ((  # unknown name, with _no_match icon
+        (1, MockLeaf('giregox')),
+    ), {'_no_match': 'question'}, {}, ['1: \uf128giregox']),
+    ((  # unknown name, with _no_match icon but long so ellipsis
+        (1, MockLeaf('giregox-giregox')),
+    ), {'_no_match': 'question'}, {}, ['1: \uf128giregox-gire…']),
+    ((  # unknown name, no CLASS and no_match icon
+        (1, MockLeaf('giregox', '', '', '')),
+    ), {'_no_match': 'question'}, {}, ['1: \uf128giregox']),
+    ((  # ignore unknown option
+        (1, MockLeaf('giregox')),
+    ), {}, {'ignore_unknown': True}, ['1']),
+    ((  # ignore unknown option, with long name
+        (1, MockLeaf('giregox-giregox-giregox')),
+    ), {}, {'ignore_unknown': True}, ['1']),
+    ((  # ignore unknown option, no class
+        (1, MockLeaf('giregox', '', '', '')),
+    ), {}, {'ignore_unknown': True}, ['1']),
+    # TEXT TRANSFORMATIONS
+    (
+        (  # just transform title through regex replace
+            (1, MockLeaf('emacs', 'foo [bar] baz')),
+        ), {'emacs': {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1"},
+        }}, {}, ['1: bar']
+    ),
+    (
+        (  # just transform title through regex replace, adding icon
+            (1, MockLeaf('emacs', 'foo [bar] baz')),
+        ), {'emacs': {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1"},
+            "icon": 'play',
+        }}, {}, ['1: \uf04bbar']
+    ),
+    (
+        (  # just replaces the title, this test doesn't test anything new, can be removed
+            (1, MockLeaf('emacs', 'foo [bar] baz')),
+        ), {'emacs': {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"replaced"},
+            "icon": 'play',
+        }}, {}, ['1: \uf04breplaced']
+    ),
+    (
+        (  # just transform title through regex replace, COMPRESS
+            (1, MockLeaf('emacs', 'project [a very-too_long+window title]')),
+        ), {'emacs': {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1", 'compress': True},
+        }}, {}, ['1: a ver-too_lo…']
+    ),
+    (
+        (  # just transform title through regex replace, no compress but long
+            (1, MockLeaf('emacs', 'project [a very-too_long+window title]')),
+        ), {'emacs': {
+            "transform_title": {"from": r".*\[(.+?)\].*", "to": r"\1", 'compress': False},
+        }}, {}, ['1: a very-too_l…']
+    ),
+    ((  # pango markup
+        (1, MockLeaf('pango_emacs')),
+    ), {}, {}, ['1: <span font_desc=\\"file-icons\\">\ue926</span>']),
+    ((  # unicode directely
+        (1, MockLeaf('emacs_unicode')),
+    ), {}, {}, ['1: \ue926']),
+    ((  # icon defined but not found, maybe mispelled
+        (1, MockLeaf('emacs')),
+    ), {'emacs': 'not_there'}, {}, ['1: emacs']),
+    (
+        (  # test icon inside dict without transform_title
+            (1, MockLeaf('emacs')),
+        ), {'emacs': {
+            'icon': '<span font_desc=\"file-icons\">\ue926</span>',
+        }}, {}, ['1: <span font_desc=\\"file-icons\\">\ue926</span>']
+    ),
+    ((  # none in every window prop
+        (1, MockLeaf(None, None, None, None)),
+    ), {}, {}, ['1: ?']),
+    ((  # empty string in every window prop
+        (1, MockLeaf('')),
+    ), {}, {}, ['1: ?']),
+    ((  # workspace number -1  (means named workspace)
+        # leave it untouched
+        (-1, MockLeaf('firefox')),
+    ), {}, {}, ['']),  # in order to assert expected workspace name a separate test would be needed
+))
+def test_rename(workspaces, mappings, args, expected, mocki3):
+    _mappings = base_mappings()
+    _mappings.update(mappings)
+    _args = base_config()
+    _args.update(args)
+    mock_i3 = mocki3(*workspaces)
+    rename = build_rename(mock_i3, _mappings, _args)
+    rename(mock_i3, None)
+    assert expected == get_names(mock_i3.cmd)

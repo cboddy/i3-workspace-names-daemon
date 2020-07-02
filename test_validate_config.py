@@ -63,3 +63,7 @@ class TestValidateConfig(unittest.TestCase):
         config = {"appbla": {"transform_title": {"from": ":(.*(", "to": r"zyx",}}}
         err = _validate_config(config)
         self.assertTrue(err)
+
+    def test_mapping_icon_list_is_invalid(self):
+        config = {'firefox': ['firefox']}
+        assert _validate_config(config)

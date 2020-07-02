@@ -46,8 +46,20 @@ sudo apt install fonts-font-awesome
 Add the following line to your ``~/.i3/config``.
 
 ```
-exec_always --no-startup-id exec i3-workspace-names-daemon
+exec_always --no-startup-id exec i3-workspace-names-daemon --log-path /tmp/i3-workspaces-names-daemon.log
 ```
+
+
+Configure the `bar` config block to use the fontawesome font, for example:
+```
+bar {
+    status_command py3status --config ~/.config/i3status-bottom.conf -b
+    position bottom
+    mode hide
+    font pango:FontAwesome 18
+}
+```
+
 
 If you use the ``$mod+1`` etc. shortcuts to switch workspaces then update the following so that the *switch to workspace* and *move focused window to workspace* **shortcuts still work**. 
 
@@ -67,6 +79,8 @@ bindsym $mod+1 workspace number 1
 bindsym $mod+Shift+1 move container to workspace number 1
 # etc
 ```
+
+then reload i3
 
 
 ### icons config
@@ -106,7 +120,10 @@ Windows names are detected by inspecting in the following priority
 
 If there is no window name available a question mark is shown instead.
 
-Another (simpler) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
+Another (*simpler*) way for debugging window names is running this script with `-v` or `--verbose` flag, it is suggested to use a terminal emulator that supports unicode (eg. kitty or urxvt)
+
+Meanwhile the *simplest* way is to run `tail -f /tmp/i3-workspaces-names-daemon.log` (assuming you are using `--log-path` option)
+
 
 ### unrecognised windows
 

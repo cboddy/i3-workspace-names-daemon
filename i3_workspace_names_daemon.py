@@ -4,9 +4,14 @@
 import json
 import os.path
 import argparse
+import logging
 import re
 import i3ipc
+from pprint import pformat
 from fa_icons import icons as fa_icons
+
+
+log = logging.getLogger()  # I mean... it's ok to use root logger...
 
 I3_CONFIG_PATHS = tuple(
     os.path.expanduser(path)
@@ -25,6 +30,17 @@ DEFAULT_APP_ICON_CONFIG = {
     "signal": "comment",
 }
 
+
+DEFAULT_ARGS = {
+    'config_path': None,
+    'delimiter': '|',
+    'max_title_length': 12,
+    'verbose': False,
+    'no_match_not_show_name': False,
+    'ignore_unknown': False,
+    'uniq': False,
+    'log_path': None,
+}
 
 def truncate(text, length, ellipsis="…"):
     if len(text) <= length:
@@ -51,8 +67,8 @@ def build_rename(i3, mappings, args):
     i3: `i3ipc.i3ipc.Connection`
     mappings: `dict[str, Union[dict, str]]`
         Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
-    delim: `str`
-        Delimiter to use when build workspace name from app names/icons.
+    args: `object`
+        Arguments parameters usually from argparse
 
     Returns
     -------
@@ -69,9 +85,17 @@ def build_rename(i3, mappings, args):
     def get_icon(icon_name):
         # is pango markup?
         if icon_name.startswith("<"):
+            return icon_name  # you can also use colored text and so on
+        try:
+            # is fontawesome icon name?
+            icon_name.encode('ascii')
+            if icon_name in fa_icons:
+                return fa_icons[icon_name]
+        except UnicodeEncodeError as ex:
+            # is unicode icon, this is reached when you specified another font
+            # in i3 bar config, so you put /ucode directely (instead of from fa_icons)
+            # otherwise... if fontawesome gets updated and we don't still provide the new icon mapping.
             return icon_name
-        if icon_name in fa_icons:
-            return fa_icons[icon_name]
         return None
 
     def transform_title(target_mapping, window_title):
@@ -96,13 +120,6 @@ def build_rename(i3, mappings, args):
         if nr_subs > 0:
             return "{}{}".format(icon, result)
 
-        # fallback: title did not match, but icon defined
-        if icon:
-            return icon
-
-        # nothing matched
-        return None
-
     def resolve_icon_or_mapping(name, leaf):
         for name_re in mappings.keys():
             if re.match(name_re, name, re.IGNORECASE):
@@ -125,36 +142,42 @@ def build_rename(i3, mappings, args):
                         return transform_title(target_mapping, window_title)
                     return get_icon(target_mapping.get('icon', ''))
 
-    def get_app_label(leaf, length):
-        # interate through all identifiers, stop when first match is found
+
+    def get_app_identifiers(leaf):
+        identifiers = {}
         for identifier in ("name", "window_title", "window_instance", "window_class"):
             name = getattr(leaf, identifier, None)
-            if name is None:
-                continue
+            identifiers[identifier] = name if name is not None else ''  # cannot use just '' in getattr
+        return identifiers
+
+    def get_app_label(leaf, length):
+        for name in get_app_identifiers(leaf).values():
             mapping = resolve_icon_or_mapping(name, leaf)
             if mapping:
                 return mapping
 
+        log.warning('no match found for:\n%s', pformat(
+            get_app_identifiers(leaf),
+            indent=4,
+        ))
         # no mapping was found
         if ignore_unknown:
             return None
 
-        window_class = name
         no_match_fallback = "_no_match" in mappings and mappings["_no_match"] in fa_icons
-        if window_class:
+        for name in get_app_identifiers(leaf).values():
             # window class exists, no match was found
+            if not name:
+                continue
             if no_match_fallback:
                 return fa_icons[mappings["_no_match"]] + (
                     "" if no_unknown_name else truncate(name, length)
                 )
             return truncate(name, length)
-        else:
-            # no identifiable information about this window
-            if no_match_fallback:
-                return fa_icons[mappings["_no_match"]]
-            return "?"
+        log.error('no identifiable information about this window')
+        return "?"
 
-    def rename(i3, e):
+    def rename(i3, _):
         workspaces = i3.get_tree().workspaces()
         # need to use get_workspaces since the i3 con object doesn't have the visible property for some reason
         workdicts = i3.get_workspaces()
@@ -175,9 +198,16 @@ def build_rename(i3, mappings, args):
             names = [x for x in names if x]
             names = delim.join(names)
             if int(workspace.num) >= 0:
-                newname = u"{}: {}".format(workspace.num, names)
-            else:
-                newname = names
+                if len(names) != 0:
+                    newname = u"{}: {}".format(workspace.num, names)
+                else:
+                    newname = str(workspace.num)
+            else:  # pragma: no cover (due to https://github.com/nedbat/coveragepy/issues/198 )
+                # named workspaces have -1 as number
+                # continue here means the name will stay untouched
+                # go into your i3 config if you want to customize it,
+                # but it will always be static
+                continue
 
             if workspace.name in visible:
                 visworkspaces.append(newname)
@@ -193,7 +223,7 @@ def build_rename(i3, mappings, args):
                     )
                 )
                 if verbose:
-                    print(commands[-1])
+                    log.debug(commands[-1])
 
         # we have to join all the activate workspaces commands into one or the order
         # might get scrambled by multiple i3-msg instances running asyncronously
@@ -255,16 +285,15 @@ def _get_mapping(config_path=None):
             mappings = json.load(f)
         # normalise app-names to lower
         return {k.lower(): v for k, v in mappings.items()}
-    else:
-        print("Using default app-icon config {}".format(DEFAULT_APP_ICON_CONFIG))
-        return dict(DEFAULT_APP_ICON_CONFIG)
+    log.warning("Using default app-icon config %s", DEFAULT_APP_ICON_CONFIG)
+    return dict(DEFAULT_APP_ICON_CONFIG)
 
 
 def _verbose_startup(i3):
     for w in i3.get_tree().workspaces():
-        print('WORKSPACE: "{}"'.format(w.name))
+        log.debug('WORKSPACE: "{}"'.format(w.name))
         for i, l in enumerate(w.leaves()):
-            print(
+            log.debug(
                 """===> leave: {}
 -> name: {}
 -> window_title: {}
@@ -285,9 +314,6 @@ def _is_valid_re(regex):
 
 def _validate_dict_mapping(app, mapping):
     err = False
-    if type(mapping) != dict:
-        print("Specified mapping for app '{}' is not a dict!".format(app))
-        return False
     if mapping.get("transform_title", None):
         # a title transformation exists
         tt = mapping["transform_title"]
@@ -295,14 +321,14 @@ def _validate_dict_mapping(app, mapping):
         if tt.get("from", None):
             if not _is_valid_re(tt["from"]):
                 err = True
-                print(
+                log.error(
                     "Title transform mapping for app '{}' contains invalid regular expression in 'from' attribute!".format(
                         app
                     )
                 )
         else:
             err = True
-            print(
+            log.error(
                 "Title transform mapping for app '{}' requires a 'from' key!".format(
                     app
                 )
@@ -310,7 +336,7 @@ def _validate_dict_mapping(app, mapping):
 
         if not tt.get("to", None):
             err = True
-            print(
+            log.error(
                 "Title transform mapping for app '{}' requires a 'to' key!".format(app)
             )
 
@@ -318,17 +344,20 @@ def _validate_dict_mapping(app, mapping):
 
 
 def _validate_config(config):
+    """returns True when THERE IS something wrong"""
     # check for missing icons and wrong configurations
-    err = False
     for app, value in config.items():
         icon_name = None
         if type(value) == str:
             icon_name = value
         else:
             # icon is optional when using a transform mapping
+            if type(value) != dict:
+                log.error("Specified mapping for app '{}' is not a dict!".format(app))
+                return True
             icon_name = value.get("icon", None)
             if _validate_dict_mapping(app, value):
-                err = True
+                return True
 
         # make exceptions for custom-defined pango fonts
         if (
@@ -336,14 +365,13 @@ def _validate_config(config):
             and not icon_name.startswith("<")
             and not icon_name in fa_icons
         ):
-            err = True
-            print(
+            log.error(
                 "Specified icon '{}' for app '{}' does not exist!".format(
                     icon_name, app
                 )
             )
+            return True
 
-    return err
 
 
 def main():
@@ -358,14 +386,14 @@ def main():
         "--delimiter",
         help="The delimiter used to separate multiple window names in the same workspace.",
         required=False,
-        default="|",
+        default=DEFAULT_ARGS['delimiter'],
     )
     parser.add_argument(
         "-l",
         "--max-title-length",
         help="Truncate title to specified length.",
         required=False,
-        default=12,
+        default=DEFAULT_ARGS['max_title_length'],
         type=int,
     )
     parser.add_argument(
@@ -374,7 +402,7 @@ def main():
         help="Remove duplicate icons.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['uniq'],
     )
     parser.add_argument(
         "-i",
@@ -382,7 +410,7 @@ def main():
         help="Ignore apps without a icon definitions.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['ignore_unknown'],
     )
     parser.add_argument(
         "-n",
@@ -390,22 +418,36 @@ def main():
         help="Don't display the name of unknown apps besides the fallback icon '_no_match'.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['no_match_not_show_name'],
     )
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Verbose startup that will help you to find the right match name for applications.",
+        help="Verbose logging that will help you to find the right match name for applications.",
         action="store_true",
         required=False,
-        default=False,
+        default=DEFAULT_ARGS['verbose'],
+    )
+    parser.add_argument(
+        '--log-path',
+        help="path of the log to be generated, it will be overwriten every time this script starts. by default console will be used instead of a file",
+        required=False,
+        default=DEFAULT_ARGS['log_path'],
     )
     args = parser.parse_args()
+
+    logging.basicConfig(
+        filename=args.log_path,
+        filemode='w',
+        level=logging.WARNING
+    )
+    if args.verbose:
+        log.setLevel(level=logging.DEBUG)
 
     mappings = _get_mapping(args.config_path)
 
     if _validate_config(mappings):
-        print("Errors in configuration found!")
+        log.error("Errors in configuration found!")
 
     # build i3-connection
     i3 = i3ipc.Connection()
@@ -418,5 +460,5 @@ def main():
     i3.main()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
