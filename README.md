@@ -81,8 +81,14 @@ chris@vulcan: ~$ cat ~/.i3/app-icons.json
     "clementine": "music",
     "vlc": "play",
     "signal": "comment",
-    "_no_match": "question",
+    "_no_match": "question"
 }
+```
+
+NB: to validate your config file is formatted correctly run this command and check it doesn't  report an error
+
+```
+python3 -m json.tool  /path/to/your/app-icons.json
 ```
 
 where the key is the name of the i3-window (ie. what is shown in the i3-bar when it is not configured yet) and  the value is the font-awesome icon name you want to show instead, see [picking icons](#picking-icons).
