@@ -150,6 +150,8 @@ As the i3bar supports [pango markup](https://developer.gnome.org/pygtk/stable/pa
 Custom text can be used instead of icons too.
 All icon definitions starting with the `<` character will be interpreted as pango markup.
 
+The following commands require the `pango-list` and `pango-view` applications, which are included in the `pango1.0-tools` package on Ubuntu (for other distros [check here](https://pkgs.org/search/?q=pango-view&on=files)).
+
 To check which fonts are available for use in pango, run the command
 ```
 pango-list
