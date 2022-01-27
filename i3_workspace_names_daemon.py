@@ -39,6 +39,7 @@ def build_rename(i3, app_icons, args):
     func
         The rename callback.
     """
+    form = args.format
     delim = args.delimiter
     length = args.max_title_length
     uniq = args.uniq
@@ -80,7 +81,7 @@ def build_rename(i3, app_icons, args):
                 names = [x for x in names if x not in seen and not seen.add(x)]
             names = delim.join(names)
             if int(workspace.num) >= 0:
-                newname = u"{}: {}".format(workspace.num, names)
+                newname = form.format(workspace.num, names)
             else:
                 newname = names
 
@@ -170,6 +171,10 @@ def main():
     parser.add_argument("-config-path",
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
+    parser.add_argument("-f", "--format",
+            help='Format of the workspace number + names/icons.\nThe first "{}" represents the workspace number space and the second represents the names/icons space.\nEx: - "{}: {}" (Default)\n - "{} - {}"\n - "{} ( {} )"',
+                        required=False,
+                        default="{}: {}")
     parser.add_argument("-d", "--delimiter",
                         help="The delimiter used to separate multiple window names in the same workspace.",
                         required=False,
