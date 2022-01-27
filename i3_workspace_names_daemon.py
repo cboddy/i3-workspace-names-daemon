@@ -172,7 +172,7 @@ def main():
                         help="Path to file that maps applications to icons in json format. Defaults to ~/.i3/app-icons.json or ~/.config/i3/app-icons.json or hard-coded list if they are not available.",
                         required=False)
     parser.add_argument("-f", "--format",
-            help='Format of the workspace number + names/icons.\nThe first "{}" represents the workspace number space and the second represents the names/icons space.\nEx: "{}: {}" or "{} ( {} )".',
+            help='Format of the workspace number + names/icons.\nThe first "{}" represents the workspace number space and the second represents the names/icons space.\nEx: - "{}: {}" (Default)\n - "{} - {}"\n - "{} ( {} )"',
                         required=False,
                         default="{}: {}")
     parser.add_argument("-d", "--delimiter",
