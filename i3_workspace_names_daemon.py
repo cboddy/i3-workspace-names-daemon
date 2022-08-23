@@ -33,6 +33,8 @@ def build_rename(i3, app_icons, args):
         Index of application-name regex (from i3) to icon-name (in font-awesome gallery).
     delim: `str`
         Delimiter to use when build workspace name from app names/icons.
+    fuzzy: `bool`
+        If true, will apply fuzzy matching to assign icons to apps.
 
     Returns
     -------
@@ -44,6 +46,7 @@ def build_rename(i3, app_icons, args):
     uniq = args.uniq
     no_match_show_name = not args.no_match_not_show_name
     verbose = args.verbose
+    fuzzy = args.fuzzy
 
     def get_icon_or_name(leaf, length):
         for identifier in ('name', 'window_title', 'window_instance', 'window_class'):
@@ -51,7 +54,12 @@ def build_rename(i3, app_icons, args):
             if name is None:
                 continue
             for name_re in app_icons.keys():
-                if re.match(name_re, name, re.IGNORECASE) \
+                has_match = False
+                if fuzzy:
+                    has_match = re.match(re.compile('.*' + '.*'.join(name_re.split()) + '.*', re.IGNORECASE), name)
+                else:
+                    has_match = re.match(name_re, name, re.IGNORECASE)
+                if has_match \
                    and app_icons[name_re] in icons:
                     return icons[app_icons[name_re]]
         if name:
@@ -186,6 +194,10 @@ def main():
                         help="when you set '_no_match' in your app icons, if you don't want the application name set this option",
                         action="store_true", required=False, default=False)
     parser.add_argument("-v", "--verbose", help="verbose startup that will help you to find the right name of the window",
+                        action="store_true",
+                        required=False,
+                        default=False)
+    parser.add_argument("-f", "--fuzzy", help="Apply fuzzy matching to assign icons to apps.",
                         action="store_true",
                         required=False,
                         default=False)
